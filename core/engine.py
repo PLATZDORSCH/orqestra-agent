@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from openai import OpenAI
 
@@ -33,13 +33,23 @@ class StrategyEngine:
         capabilities: CapabilityManager,
         *,
         persona_path: str | Path | None = None,
+        memory_prompt: str | None = None,
         max_rounds: int = 25,
+        language: str | None = None,
+        on_thinking: Callable[[str], None] | None = None,
+        on_tool_call: Callable[[str, str], None] | None = None,
+        on_tool_done: Callable[[], None] | None = None,
     ) -> None:
         self.llm = OpenAI(base_url=base_url, api_key=api_key)
         self.model = model
         self.capabilities = capabilities
         self.max_rounds = max_rounds
         self._persona = self._load_persona(persona_path)
+        self._memory_prompt = memory_prompt
+        self._language = language
+        self._on_thinking = on_thinking
+        self._on_tool_call = on_tool_call
+        self._on_tool_done = on_tool_done
 
     def run(
         self,
@@ -53,6 +63,9 @@ class StrategyEngine:
         for round_num in range(1, self.max_rounds + 1):
             log.debug("Round %d/%d", round_num, self.max_rounds)
 
+            if self._on_thinking:
+                self._on_thinking("Thinking")
+
             response = self.llm.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -63,15 +76,23 @@ class StrategyEngine:
             messages.append(assistant_msg)
 
             if not assistant_msg.tool_calls:
+                if self._on_tool_done:
+                    self._on_tool_done()
                 return assistant_msg.content or ""
 
             for call in assistant_msg.tool_calls:
                 fn_name = call.function.name
                 fn_args = json.loads(call.function.arguments)
-                log.info("→ %s(%s)", fn_name, _truncate(json.dumps(fn_args, ensure_ascii=False), 120))
+                args_preview = _truncate(json.dumps(fn_args, ensure_ascii=False), 80)
+
+                if self._on_tool_call:
+                    self._on_tool_call(fn_name, args_preview)
+
+                if self._on_thinking:
+                    self._on_thinking(f"Running {fn_name}")
 
                 result = self.capabilities.run(fn_name, fn_args)
-                log.info("← %s chars", len(result))
+                log.debug("← %s: %s chars", fn_name, len(result))
 
                 messages.append({
                     "role": "tool",
@@ -79,6 +100,8 @@ class StrategyEngine:
                     "content": result,
                 })
 
+        if self._on_tool_done:
+            self._on_tool_done()
         return "Could not complete the analysis — round limit reached."
 
     def _build_messages(
@@ -87,8 +110,28 @@ class StrategyEngine:
         history: list[dict[str, Any]] | None,
     ) -> list[dict[str, Any]]:
         messages: list[dict[str, Any]] = []
+        # Single system message — some OpenAI-compatible backends (e.g. vLLM via LiteLLM)
+        # reject multiple role=system blocks and require system at the very beginning only.
+        parts: list[str] = []
         if self._persona:
-            messages.append({"role": "system", "content": self._persona})
+            parts.append(self._persona)
+        if self._language:
+            parts.append(
+                f"## Language\n\n"
+                f"Your default language is {self._language}. "
+                f"Use {self._language} when the user's language is ambiguous or unclear. "
+                f"However, if the user writes in a different language, always respond "
+                f"in that language instead — mirror the user's language exactly."
+            )
+        if self._memory_prompt:
+            parts.append(
+                "## Long-term memory (wiki/memory.md)\n\n"
+                f"{self._memory_prompt}\n\n"
+                "Update this file with `kb_write` when the user agrees on lasting preferences or facts. "
+                "Do not paste long analyses here — write a wiki page and link to it."
+            )
+        if parts:
+            messages.append({"role": "system", "content": "\n\n".join(parts)})
         if history:
             messages.extend(history)
         messages.append({"role": "user", "content": question})

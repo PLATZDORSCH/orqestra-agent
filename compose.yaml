@@ -1,0 +1,14 @@
+services:
+  cod:
+    build: .
+    # Playwright/Chromium: avoid OOM/crashes when rendering pages
+    shm_size: "1gb"
+    stdin_open: true
+    tty: true
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - BRAVE_API_KEY=${BRAVE_API_KEY:-}
+      - SEARXNG_URL=${SEARXNG_URL:-}
+    volumes:
+      - ./knowledge_base:/app/knowledge_base
+      - ./skills:/app/skills

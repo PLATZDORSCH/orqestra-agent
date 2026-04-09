@@ -7,3 +7,9 @@ dist/
 build/
 .mypy_cache/
 .pytest_cache/
+.docker/
+knowledge_base/wiki/
+knowledge_base/raw/
+knowledge_base/content/drafts/
+knowledge_base/content/published/
+output/

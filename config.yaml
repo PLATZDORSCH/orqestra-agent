@@ -1,10 +1,19 @@
 llm:
-  base_url: "https://api.openai.com/v1"
+  base_url: "https://tokenstudio.platzdorsch.io/v1"
   api_key: "${OPENAI_API_KEY}"
-  model: "gpt-4o"
+  model: "qwen3.5-35b-a3b-fp8"
 
 engine:
   max_rounds: 25
+  language: "German"
 
 knowledge_base:
   path: "./knowledge_base"
+
+skills:
+  path: "./skills"
+
+memory:
+  path: "wiki/memory.md"
+  max_chars: 6000
+  enabled: true

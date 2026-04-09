@@ -1,4 +1,4 @@
-"""Capability system for the Dorsch Agent.
+"""Capability system for the Cod Agent.
 
 Each Capability bundles an OpenAI function-calling schema with a handler
 function. The CapabilityManager collects them and provides schema export

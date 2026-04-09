@@ -35,7 +35,7 @@ def _handle_run_script(args: dict) -> str:
     if description:
         log.info("Script execution: %s", description)
 
-    fd, tmp_path = tempfile.mkstemp(suffix=".py", prefix="dorsch_")
+    fd, tmp_path = tempfile.mkstemp(suffix=".py", prefix="cod_")
     try:
         with os.fdopen(fd, "w") as f:
             f.write(code)

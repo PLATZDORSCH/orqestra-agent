@@ -1,23 +1,31 @@
-"""Knowledge base — Markdown wiki with YAML frontmatter and full-text search.
+"""Knowledge base — Three-layer Markdown wiki with YAML frontmatter and FTS5 search.
 
-Documents are stored as .md files with YAML headers inside knowledge_base/.
-A SQLite FTS5 index provides fast full-text search and metadata filtering.
-A links table tracks cross-references (references: [...]) between entries.
+Architecture:
+    raw/          Immutable source documents (articles, PDFs, notes)
+    wiki/         Structured, interlinked wiki pages (topics, trends, players, etc.)
+    content/      Publishable content derived from wiki (drafts, templates)
 
-Wiki entry format:
+All .md files are indexed recursively. A SQLite FTS5 index provides fast
+full-text search. Cross-references are tracked both from YAML `sources` fields
+and from inline Markdown links [text](path.md).
+
+Wiki page format:
 
     ---
-    title: "Company Name"
-    category: competitors
-    industry: SaaS
-    region: DACH
-    tags: [crm, enterprise]
-    references:
-      - markets/saas-dach.md
+    title: "AI Agents in Business"
+    category: topics
+    created: 2026-04-08
+    updated: 2026-04-08
+    tags: [ai, automation]
+    sources: [source-1.md]
+    status: active
     ---
 
-    # Company Name
-    Free-form Markdown content ...
+    # AI Agents in Business
+    Content ...
+
+    ## Related Pages
+    - [Trend: AI Agents](../trends/ai-agents.md)
 """
 
 from __future__ import annotations
@@ -37,16 +45,66 @@ from core.capabilities import Capability
 log = logging.getLogger(__name__)
 
 
+_WIKI_DIRS = [
+    "raw/articles", "raw/pdfs", "raw/notes",
+    "wiki/topics", "wiki/trends", "wiki/regulation",
+    "wiki/market", "wiki/players", "wiki/sources", "wiki/synthesis",
+    "content/drafts", "content/published", "content/templates",
+]
+
+_SCAFFOLD_FILES: dict[str, tuple[dict, str]] = {
+    "wiki/index.md": (
+        {"title": "Wiki Index", "category": "meta", "tags": ["index"]},
+        "# Wiki Index\n\nCatalog of all wiki pages.\n",
+    ),
+    "wiki/overview.md": (
+        {"title": "Industry Overview", "category": "meta", "tags": ["overview"]},
+        "# Industry Overview\n\nHigh-level overview — updated as knowledge grows.\n",
+    ),
+    "wiki/log.md": (
+        {"title": "Operations Log", "category": "meta", "tags": ["log"]},
+        "# Operations Log\n\nChronological log of wiki operations (append-only).\n",
+    ),
+    "wiki/memory.md": (
+        {"title": "Agent Memory", "category": "meta", "tags": ["memory"]},
+        (
+            "# Agent Memory\n\n"
+            "## User / project context\n\n"
+            "_(no entries yet)_\n\n"
+            "## Working preferences\n\n"
+            "_(no entries yet)_\n\n"
+            "## Linked analyses\n\n"
+            "_(no entries yet)_\n"
+        ),
+    ),
+}
+
+
 class KnowledgeBase:
     """In-process Markdown wiki backed by a SQLite FTS5 search index."""
 
     def __init__(self, base_dir: str | Path) -> None:
         self.base = Path(base_dir).resolve()
         self.base.mkdir(parents=True, exist_ok=True)
+        self._bootstrap()
         self._db = sqlite3.connect(":memory:")
         self._db.execute("PRAGMA journal_mode=WAL")
         self._create_schema()
         self._reindex()
+
+    def _bootstrap(self) -> None:
+        """Create folder structure and scaffold files on first run."""
+        for d in _WIKI_DIRS:
+            (self.base / d).mkdir(parents=True, exist_ok=True)
+
+        for rel_path, (meta, body) in _SCAFFOLD_FILES.items():
+            full = self.base / rel_path
+            if full.exists():
+                continue
+            meta_copy = {**meta, "created": str(date.today()), "updated": str(date.today())}
+            post = frontmatter.Post(body, **meta_copy)
+            full.write_text(frontmatter.dumps(post), encoding="utf-8")
+            log.info("Scaffold created: %s", rel_path)
 
     def _create_schema(self) -> None:
         self._db.executescript("""
@@ -249,12 +307,19 @@ def _handle_related(args: dict) -> str:
 
 kb_search = Capability(
     name="kb_search",
-    description="Search the knowledge base using full-text search. Optionally filter by category (companies, markets, competitors, strategies).",
+    description=(
+        "Search the knowledge base using full-text search. "
+        "Covers all three layers: raw/ (sources), wiki/ (topics, trends, regulation, market, players, sources, synthesis), "
+        "and content/ (drafts, templates). Optionally filter by category."
+    ),
     parameters={
         "type": "object",
         "properties": {
             "query": {"type": "string", "description": "Search term(s)"},
-            "category": {"type": "string", "description": "Optional: only entries of this category"},
+            "category": {
+                "type": "string",
+                "description": "Filter by category: topics, trends, regulation, market, players, sources, synthesis",
+            },
             "limit": {"type": "integer", "description": "Max number of results (default: 10)"},
         },
         "required": ["query"],
@@ -264,7 +329,11 @@ kb_search = Capability(
 
 kb_read = Capability(
     name="kb_read",
-    description="Read a single entry from the knowledge base (path relative to knowledge_base/, e.g. 'competitors/acme.md').",
+    description=(
+        "Read a single entry from the knowledge base. Path is relative to knowledge_base/, "
+        "e.g. 'wiki/topics/ai-agents.md', 'wiki/index.md', 'raw/articles/2026-04-08-report.md', "
+        "'content/templates/blog.md'."
+    ),
     parameters={
         "type": "object",
         "properties": {
@@ -277,16 +346,30 @@ kb_read = Capability(
 
 kb_write = Capability(
     name="kb_write",
-    description="Create or update a wiki entry. Metadata contains YAML header fields (title, category, industry, tags, references, etc.).",
+    description=(
+        "Create or update a wiki page or save a raw source. "
+        "Paths: 'wiki/topics/name.md', 'wiki/trends/name.md', 'wiki/players/name.md', "
+        "'wiki/sources/YYYY-MM-DD-name.md', 'wiki/synthesis/name.md', 'wiki/index.md', "
+        "'raw/articles/YYYY-MM-DD-name.md', 'content/drafts/YYYY-MM-DD-name.md'. "
+        "NEVER modify existing files in raw/ — only create new ones there."
+    ),
     parameters={
         "type": "object",
         "properties": {
-            "path": {"type": "string", "description": "Relative path (e.g. 'competitors/new-entry.md')"},
+            "path": {
+                "type": "string",
+                "description": "Relative path (e.g. 'wiki/topics/ai-agents.md', 'wiki/index.md')",
+            },
             "metadata": {
                 "type": "object",
-                "description": "YAML header fields: title, category, industry, region, tags (array), references (array of paths), etc.",
+                "description": (
+                    "YAML header fields: title, category (topics|trends|regulation|market|players|sources|synthesis), "
+                    "created, updated, tags (array), sources (array of paths), status (active|draft|stale|archived). "
+                    "For trends: first_seen, momentum, relevance. For players: player_type. "
+                    "For sources: source_type, source_path, ingested."
+                ),
             },
-            "content": {"type": "string", "description": "Markdown body of the entry"},
+            "content": {"type": "string", "description": "Markdown body including a 'Related Pages' section with cross-references"},
         },
         "required": ["path", "content"],
     },
@@ -295,11 +378,17 @@ kb_write = Capability(
 
 kb_list = Capability(
     name="kb_list",
-    description="List knowledge base entries, optionally filtered by category or tag.",
+    description=(
+        "List knowledge base entries, optionally filtered by category or tag. "
+        "Categories: topics, trends, regulation, market, players, sources, synthesis."
+    ),
     parameters={
         "type": "object",
         "properties": {
-            "category": {"type": "string", "description": "Only show entries of this category"},
+            "category": {
+                "type": "string",
+                "description": "Filter: topics, trends, regulation, market, players, sources, synthesis",
+            },
             "tag": {"type": "string", "description": "Only show entries with this tag"},
         },
     },
