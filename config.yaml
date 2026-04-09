@@ -1,0 +1,10 @@
+llm:
+  base_url: "https://api.openai.com/v1"
+  api_key: "${OPENAI_API_KEY}"
+  model: "gpt-4o"
+
+engine:
+  max_rounds: 25
+
+knowledge_base:
+  path: "./knowledge_base"
