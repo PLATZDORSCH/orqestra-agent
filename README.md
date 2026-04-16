@@ -1,316 +1,362 @@
-# Cod Agent
+# Orqestra
 
-Business strategy agent with an integrated wiki knowledge base.
+Multi-department business consulting agent with specialized sub-agents, integrated wiki knowledge bases, and proactive multi-phase department jobs.
 
 ## What is this?
 
-An AI agent that helps businesses with strategy, content planning, market analysis, and competitive intelligence. It connects to any OpenAI-compatible API and builds a structured, interlinked knowledge wiki over time — based on the [LLM Wiki Pattern](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f).
+An AI agent system that helps businesses with strategy, SEO, marketing, finance, and operations. It connects to any OpenAI-compatible API and uses a **multi-agent architecture**: an orchestrator routes tasks to specialized departments, each with its own knowledge base, skills, and expertise.
 
-Instead of re-retrieving raw data on every question, the agent **incrementally builds a persistent wiki** — structured, interlinked, compounding. Knowledge is compiled once and kept current.
+Instead of one monolithic agent, Orqestra runs **departments** — focused sub-agents that build domain-specific knowledge over time. Departments can work autonomously in the background (proactive pipeline), and iterate on complex tasks using **Deep Work** mode.
 
-## How it works
+## Key features
+
+- **Multi-department architecture** — specialized sub-agents with independent knowledge bases
+- **Deep Work mode** — iterative execution with structured self-evaluation and progress tracking
+- **Proactive pipeline** — departments autonomously research and write wiki content on a configurable schedule
+- **Department templates** — install pre-built departments (Market Research, Content Creation, Competitive Intelligence) with one click
+- **Obsidian-style link graph** — force-directed visualization of wiki pages, their links, shared tags and job clusters (not a semantic knowledge graph)
+- **FTS5 fuzzy search** — full-text search with fuzzy matching and suggestions
+- **i18n personas** — English default with German locale fallback (`.de.md`)
+- **Project context** — define your company/project in `config.yaml` to give all agents shared context
+- **Four interfaces** — CLI, REST API, Web UI, and Telegram — all sharing the same state
+
+## Architecture
 
 ```
-URL / file    Share a link or drop a file
-                 ↓ Scrape
-raw/          Clean markdown sources (immutable)
-                 ↓ Ingest
-wiki/         Agent builds structured wiki
-                 ↓ Draft
-content/      Derive publishable content
+User ──▸ Orchestrator ──▸ delegate("seo", "audit platzdorsch.de")
+              │                    ↓
+              │              SEO Department
+              │              ├── persona (SEO specialist)
+              │              ├── knowledge_base/ (own wiki)
+              │              ├── skills/ (SEO playbooks)
+              │              └── capabilities: analyze_page_seo, axe_wcag_scan, fetch_url
+              │
+              ├──▸ delegate("strategy", "competitor analysis CRM market")
+              │              ↓
+              │         Strategy Department
+              │         └── capabilities: generate_chart, run_script, read_data
+              │
+              ├──▸ cross_department_search("keyword research")
+              │         → searches ALL department wikis
+              │
+              └──▸ Proactive Scheduler (cron)
+                         → departments run multi-phase proactive jobs
 ```
 
-**Three layers:**
+## Deep Work mode
 
-| Layer | Who writes | Purpose |
-|---|---|---|
-| `raw/` | You | Immutable source documents |
-| `wiki/` | The agent | Structured, interlinked knowledge base |
-| `content/` | The agent (you review) | Blog posts, newsletters, briefings |
+For complex, multi-step tasks, departments can run in **Deep Work** mode:
+
+1. The job runs a **fixed six-phase pipeline** (RESEARCHER / CRITIC / VALIDATOR roles, two cycles) with your task text in each phase.
+2. Progress and phase index are shown in the Web UI (e.g. Phase 3/6).
+3. Tool calls are tagged with their phase number for traceability.
+
+Use `mode: "deep"` when delegating tasks (API `POST /api/departments/{name}/jobs`, or the Department page **Deep Work** toggle).
+
+## Proactive departments
+
+Departments can work autonomously on a schedule:
+
+1. **Configure** in `config.yaml`:
+   ```yaml
+   proactive:
+     enabled: true
+     schedule: "0 6 * * *"    # cron: daily at 06:00
+     iterations: 6            # pipeline phases (Researcher / Critic / Validator), max 6
+   ```
+2. Each proactive job runs a **multi-phase pipeline** (same department LLM, rotating roles): Recherche → Kritik → Nachrecherche → zweite Kritik → Plausibilität → finale Speicherung mit `kb_write`. Tool events show roles (`RESEARCHER`, `CRITIC`, `VALIDATOR`) in the Jobs UI.
+3. **Manual trigger**: CLI `/proactive trigger`, Telegram `/proactive trigger`, or `POST /api/proactive/trigger` (authenticated).
+
+## Department templates
+
+Three pre-built templates are included:
+
+| Template | Focus |
+|---|---|
+| **Market Research** | Market trends, target audiences, industry analysis |
+| **Content Creation** | Blog posts, social media, newsletters, marketing copy |
+| **Competitive Intelligence** | Competitor monitoring, SWOT analysis, market positioning |
+
+Install via:
+- **CLI**: `/department install market-research`
+- **Web UI**: Templates section in the Department Builder
+
+Templates include English and German personas, so they adapt to your `engine.language` setting.
+
+## Project context
+
+Beim ersten Öffnen der Web UI erscheint ein **Setup-Wizard**, der nach Unternehmen, Schwerpunkten und Zielmarkt fragt. Die Angaben werden in `project.yaml` gespeichert und in den System-Prompt aller Agents injiziert.
+
+Alternativ `project.yaml` direkt bearbeiten:
+
+```yaml
+name: "Acme Corp"
+type: "Digital Agency"
+location: "Berlin, Germany"
+focus: "Web development, AI solutions, e-commerce"
+target_market: "SMB in DACH region"
+notes: "Focus on privacy-first solutions and local AI"
+```
+
+In der Web UI unter **Einstellungen** jederzeit änderbar.
 
 ## Capabilities
 
 | Capability | Description |
 |---|---|
-| `kb_search` | Full-text search across the knowledge base (all three layers) |
-| `kb_read` | Read a wiki entry, source, or template |
-| `kb_write` | Create or update a wiki page |
-| `kb_list` | List entries by category or tag |
-| `kb_related` | Find linked documents via cross-references |
+| `delegate` | Send a task to a department in a **background thread**; returns `job_id` immediately |
+| `run_pipeline` | Start a named multi-step pipeline from `pipelines.yaml`; returns `run_id` (poll with `check_pipeline`) |
+| `check_job` | Poll status and result for a background job (`job_id`) |
+| `check_pipeline` | Poll status of a pipeline run (`run_id` from `run_pipeline`) |
+| `cancel_job` | Cooperatively cancel a running background job |
+| `cross_department_search` | Search across ALL department knowledge bases |
+| `cross_department_read` | Read a full wiki page from a specific department's KB |
+| `kb_search` | Full-text search across the knowledge base (FTS5, fuzzy matching) |
+| `kb_read` / `kb_write` / `kb_list` / `kb_related` | Wiki CRUD and cross-reference traversal |
 | `web_search` | Web search (Brave or SearXNG) |
-| `fetch_url` | **Chromium by default:** render page, then extract main text (trafilatura); falls back to HTTP if Playwright missing/fails; `use_browser=false` for raw HTTP only |
-| `analyze_page_seo` | **Chromium:** full technical SEO — meta, canonical, hreflang, H1–H6, JSON-LD, issues (same browser stack as `fetch_url`) |
-| `axe_wcag_scan` | **Chromium + axe-core (Deque):** WCAG 2.2 AA rule tags — violations, incomplete items, help URLs (loads pinned `axe-core` from jsDelivr) |
-| `run_script` | Execute Python scripts for calculations, modeling, and data processing |
-| `read_data` | Read CSV, Excel, JSON, or text files with auto-detected structure and basic stats |
-| `generate_chart` | Create business charts (bar, line, pie, waterfall, stacked, grouped) as PNG |
-| `skill_list` | List and search available skills (playbooks) |
-| `skill_read` | Read a skill to follow its documented steps |
-| `skill_create` | Create a new skill after completing a complex task |
-| `skill_update` | Improve an existing skill based on experience |
-
-## Wiki workflows
-
-| Workflow | What happens |
-|---|---|
-| **Scrape** | Grab a URL → convert to clean markdown, save to `raw/articles/` |
-| **Ingest** | Process new source → create summary, update wiki pages, set cross-references |
-| **Query** | Ask the wiki → answer from compiled knowledge, not raw data |
-| **Lint** | Health check → find contradictions, orphan pages, missing links |
-| **Draft** | Create content → derive blog posts, newsletters or briefings from wiki |
-| **Newsletter** | Weekly review → automatic summary of recent activity |
-
-Each workflow is documented as a skill in `skills/wiki-*.md`.
+| `fetch_url` | Chromium-rendered page scraping (JS/SPA support) |
+| `analyze_page_seo` | Technical SEO analysis (meta, canonical, JSON-LD, headings) |
+| `axe_wcag_scan` | WCAG 2.2 accessibility audit (axe-core) |
+| `run_script` | Python execution sandbox |
+| `read_data` | Read CSV, Excel, JSON with auto-detection |
+| `generate_chart` | Business charts (bar, line, pie, waterfall) |
+| `skill_list` / `skill_read` / `skill_create` / `skill_update` | Skill management |
 
 ## Installation
 
-```bash
-python -m venv venv
-source venv/bin/activate
-pip install -e .
-```
+### Voraussetzungen
 
-This installs the `cod` command into your PATH. **Recommended for web scraping and SEO:** install the browser stack so `fetch_url` and `analyze_page_seo` use real Chromium instead of plain HTTP:
+- [Docker](https://docs.docker.com/get-docker/) und [Docker Compose](https://docs.docker.com/compose/)
+
+### Setup
 
 ```bash
-pip install -e ".[analysis]"   # pandas, matplotlib, charts, Excel
-pip install -e ".[browser]"   # Playwright — then: playwright install chromium
+git clone <repo-url>
+cd orqestra
 ```
-
-Without `browser`, `fetch_url` falls back to HTTP-only fetching (fine for static pages; weak for SPAs). `analyze_page_seo` returns an install hint if Playwright is missing.
-
-## Configuration
-
-Set your API key as an environment variable:
 
 ```bash
 export OPENAI_API_KEY="sk-..."
 ```
 
-Or edit `config.yaml`:
-
-```yaml
-llm:
-  base_url: "https://api.openai.com/v1"
-  api_key: "${OPENAI_API_KEY}"
-  model: "gpt-4o"
-```
-
-For web search, configure one of the supported backends:
+Dann starten (Docker baut das Image beim ersten Mal automatisch, inkl. Frontend):
 
 ```bash
-export BRAVE_API_KEY="..."    # Brave Search (2000 requests/month free)
+docker compose up
+```
+
+Das war's. Die Web UI ist danach unter **http://localhost:4200** erreichbar.
+
+## Configuration
+
+Orqestra nutzt diese Konfigurationsdateien:
+
+| Datei | Inhalt |
+|---|---|
+| `config.yaml` | LLM, Engine, API, Telegram, Proactive-Schedule … |
+| `project.yaml` | Projekt-Kontext (Unternehmen, Markt, Fokus) — per Web UI editierbar |
+| `pipelines.yaml` | Orchestrierungs-Pipelines (sequenzielle Department-Ketten) — per Web UI **Pipelines** oder manuell |
+
+Beim ersten Öffnen der Web UI fragt ein **Setup-Wizard** den Projekt-Kontext ab und schreibt `project.yaml`. Danach jederzeit unter **Einstellungen** änderbar. Docker liest die Dateien beim Start ein — nach Änderungen Container neu starten (außer Pipelines/Departments, die oft auch per API zur Laufzeit aktualisiert werden).
+
+### Departments
+
+Orqestra starts **without any departments** — on first launch only the orchestrator with its shared knowledge base is available. You can talk to it right away; departments can be added at any time:
+
+- **Web UI:** Department Builder at `/departments/new` — a wizard walks you through persona, skills, and capabilities. Pre-built templates are available at the top.
+- **CLI:** `/department install market-research` to install a template, or `/department` for the interactive wizard.
+- **Manually:** Create or edit `departments.yaml` and restart.
+
+### Pipelines (Orchestrator)
+
+Mehrstufige Abläufe über mehrere Departments nacheinander: Definitionen in `pipelines.yaml`, Steuerung über die Web UI unter **/pipelines** oder die Orchestrator-Tools **`run_pipeline`** / **`check_pipeline`**. Jeder Schritt ist ein normales Department-Job; Ergebnisse können per `result_key` und `{Platzhalter}` an folgende Schritte weitergereicht werden.
+
+### i18n
+
+Personas support locale fallback:
+- Default: `persona.md` (English)
+- German: `persona.de.md` (loaded when `engine.language: "German"`)
+
+The orchestrator persona (`personas/orchestrator.md`) also has a German variant (`orchestrator.de.md`).
+
+For web search:
+
+```bash
+export BRAVE_API_KEY="..."       # Brave Search
 # or
-export SEARXNG_URL="http://localhost:8888"  # Self-hosted SearXNG instance
+export SEARXNG_URL="http://..."  # Self-hosted SearXNG
 ```
 
-### Long-term memory
+## Interfaces
 
-The agent loads **`knowledge_base/wiki/memory.md`** (body only, no frontmatter) into the system prompt on every request — **keep that file short**. Put detailed analyses in the wiki (e.g. `wiki/synthesis/…`) and **link to them** from memory.
+Orqestra has **four interfaces** that can be combined or used independently:
 
-Optional `config.yaml` keys (defaults apply if omitted):
+| Interface | Entry point | Config | Default |
+|---|---|---|---|
+| **CLI** (interactive REPL) | `orqestra` or `python -m orqestra.main` | always available | on (if TTY) |
+| **REST API** | `orqestra-api`, `uvicorn orqestra.api.app:app`, or embedded in `orqestra.main` | `api.enabled` | `true` |
+| **Web UI** | served from `web/dist/` by the API | `web.enabled` | `true` |
+| **Telegram** | `orqestra-telegram` or `python -m orqestra.gateway_telegram` or embedded in `orqestra.main` | `telegram.enabled` | `true` |
 
-```yaml
-memory:
-  path: "wiki/memory.md"   # relative to knowledge_base.path
-  max_chars: 6000            # max characters of body injected into the prompt
-  enabled: true
-```
+### Starting options
 
-Set `enabled: false` to disable. The agent updates memory via **`kb_write`** (same as any wiki page).
-
-## Usage
-
-### Bare metal
+**Headless — API + Web + Telegram (empfohlen für Server):**
 
 ```bash
-# Interactive REPL
-cod
-
-# Single query
-cod --query "Create a SWOT analysis for company X"
-
-# Different model
-cod --model gpt-4o-mini
-
-# Debug logging
-cod --verbose
+docker compose up -d
 ```
 
-### Docker
+**Interaktiv — mit CLI-REPL im Terminal:**
 
 ```bash
-# Start the interactive REPL in a container
-docker compose run --rm cod
-
-# Single query
-docker compose run --rm cod --query "Analyze the CRM market"
-
-# Rebuild after code changes
-docker compose build
+docker compose run --service-ports --rm orqestra
 ```
 
-The `knowledge_base/` and `skills/` directories are mounted as volumes — changes the agent makes persist on your host filesystem.
+> `--service-ports` ist nötig, damit Port 4200 erreichbar ist. Das Docker-Image baut das Web-Frontend automatisch (Multi-Stage-Build mit Node.js).
 
-Create a `.env` file with your API keys:
+**Einzelne Anfrage (non-interactive):**
 
 ```bash
-OPENAI_API_KEY=sk-...
-BRAVE_API_KEY=...
+docker compose run --rm orqestra orqestra --query "Analyze competitor X"
 ```
+
+**Zusätzliche Flags:**
+
+| Flag | Wirkung |
+|---|---|
+| `--model gpt-4o-mini` | LLM-Modell überschreiben |
+| `--verbose` / `-v` | Debug-Logging |
+| `--no-telegram` | Telegram deaktivieren (auch wenn in config aktiv) |
+| `--no-web` | Web UI deaktivieren |
+
+### Web UI
+
+Das React-Frontend liegt in `web/`. Wenn `api.enabled` und `web.enabled` in `config.yaml` aktiv sind, liefert die API die gebauten statischen Dateien aus `web/dist/` auf demselben Port wie die REST API (Standard: **4200**).
+
+Das Dockerfile baut das Frontend automatisch — kein manueller Schritt nötig.
+
+**Entwicklung (Hot Reload, ohne Docker):**
+
+```bash
+cd web && npm run dev     # Vite Dev-Server auf Port 4201
+orqestra                  # API auf Port 4200 (separates Terminal)
+```
+
+### Telegram
+
+Long Polling — no inbound port needed. Shares `config.yaml`, wiki, and skills with the other interfaces.
+
+#### Setting up the bot
+
+1. **Create a bot:** Open **[@BotFather](https://t.me/BotFather)** in Telegram, send `/newbot`, choose a display name and username. Copy the token.
+
+2. **Configure the token:**
+   ```bash
+   export TELEGRAM_BOT_TOKEN="your-token-here"
+   ```
+
+3. **Restrict access (default):**
+   ```yaml
+   telegram:
+     enabled: true
+     token: "${TELEGRAM_BOT_TOKEN}"
+     require_whitelist: true
+     allowed_user_ids: [123456789]
+   ```
+
+4. **Chat commands:** `/new`, `/status`, `/stop <id>`, `/results`, `/proactive`, `/department`, `/cancel`.
 
 ### REPL commands
 
-- `/new` — Start a new conversation
-- `exit` / `quit` / `Ctrl+D` — Quit
-
-## Knowledge base structure
-
-```
-knowledge_base/
-├── raw/                    Immutable source documents (input)
-│   ├── articles/           Web articles as Markdown
-│   ├── notes/              Personal notes, meeting notes
-│   └── pdfs/               PDF documents
-├── wiki/                   Structured wiki pages (processing)
-│   ├── index.md            Catalog of all pages (agent entry point)
-│   ├── log.md              Chronological log of all operations
-│   ├── overview.md         Industry overview — the big picture
-│   ├── topics/             Domain topics, technologies, methods
-│   ├── trends/             Emerging developments and signals
-│   ├── regulation/         Laws, standards, compliance
-│   ├── market/             Market data, segments, dynamics
-│   ├── players/            Companies, associations, people, institutions
-│   ├── sources/            One summary per processed source
-│   └── synthesis/          Analyses, cross-connections, conclusions
-└── content/                Publishable content (output)
-    ├── drafts/             Agent-generated drafts (before review)
-    ├── published/          Approved, final content
-    └── templates/          Templates: blog, briefing, newsletter
-```
-
-### Frontmatter
-
-Every wiki page starts with YAML frontmatter:
-
-```yaml
----
-title: "AI Agents in Business"
-category: topics
-created: 2026-04-08
-updated: 2026-04-08
-tags: [ai, automation, agents]
-sources: [2026-04-08-report.md]
-status: active
----
-```
-
-### Cross-references
-
-The agent maintains bidirectional cross-references between wiki pages. Every page has a "Related Pages" section at the bottom that links to related entries across categories. This makes the knowledge structure visible and navigable (works great with Obsidian's graph view).
-
-## Skills (self-improving playbooks)
-
-Skills are reusable step-by-step procedures stored as Markdown files in `skills/`.
-
-### Wiki skills (built-in)
-
-| Skill | Purpose |
+| Command | Description |
 |---|---|
-| `wiki-scrape` | Scrape a URL and save as raw source |
-| `wiki-ingest` | Process a source and integrate into the wiki |
-| `wiki-query` | Answer questions from wiki knowledge |
-| `wiki-lint` | Run a health check on the wiki |
-| `wiki-draft` | Create publishable content from wiki |
-| `wiki-newsletter` | Generate a weekly review |
-
-### Strategy skills
-
-| Skill | Purpose |
-|---|---|
-| `swot-analysis` | Structured SWOT analysis |
-| `competitor-analysis` | Full strategic competitor analysis (positioning, offering, pricing, SWOT) |
-| `competitor-deep-dive` | Comprehensive competitor profile |
-| `market-sizing` | TAM/SAM/SOM market sizing |
-| `business-model-canvas` | Map a business model (9 blocks) |
-| `value-proposition-canvas` | Product-market fit analysis (jobs, pains, gains) |
-| `pricing-analysis` | Competitive pricing research and tier design |
-| `okr-framework` | Define OKRs and KPIs for teams/products |
-| `risk-assessment` | Risk identification, scoring, and mitigation planning |
-
-### Finance skills
-
-| Skill | Purpose |
-|---|---|
-| `financial-forecast` | Revenue and cost projections (12-36 months, multi-scenario) |
-| `unit-economics` | CAC, LTV, payback period, LTV/CAC ratio |
-| `break-even-analysis` | Break-even point for products, projects, investments |
-
-### Marketing skills
-
-| Skill | Purpose |
-|---|---|
-| `seo-content-brief` | Research-backed content briefs for search-optimized articles |
-| `content-calendar` | 4-12 week content plan with pillars, topics, channels |
-| `email-campaign` | Cold outreach, nurture sequences, newsletters |
-| `social-media-strategy` | Platform selection, content pillars, posting plan |
-
-### Sales skills
-
-| Skill | Purpose |
-|---|---|
-| `sales-pitch` | Tailored pitch preparation with objection handling |
-| `proposal-generation` | Structured proposals/quotes with scope, timeline, pricing |
-
-### Operations skills
-
-| Skill | Purpose |
-|---|---|
-| `stakeholder-mapping` | Power/interest grid with engagement strategies |
-| `project-kickoff` | Project brief with scope, RACI, timeline, risks |
-
-### Tech skills
-
-| Skill | Purpose |
-|---|---|
-| `seo-site-audit` | Full technical SEO health check on a website |
-| `seo-competitor-analysis` | Reverse-engineer competitor SEO strategy |
-| `seo-keyword-research` | Research and prioritize keywords for content strategy |
-| `seo-onpage-optimization` | On-page optimization recommendations for a specific page |
-| `seo-page-speed` | Page load performance analysis and optimization tips |
-| `axe-wcag-accessibility` | Automated a11y audit with axe-core (WCAG 2.2 AA tags) |
-
-The agent **self-improves** by creating new skills after completing complex tasks and updating existing ones with better examples and edge cases.
+| `/new` | Start a new conversation |
+| `/status` | List running and recently completed jobs |
+| `/stop <job_id>` | Cancel a job |
+| `/results` | Summary of completed jobs |
+| `/results <job_id>` | Full output of a specific job |
+| `/proactive trigger` | Manually trigger proactive jobs for all departments |
+| `/department` | Start the department builder wizard |
+| `/department install <name>` | Install a template department |
+| `exit` / `quit` / `Ctrl+D` | Quit |
 
 ## Project structure
 
+Python code lives under **`src/orqestra/`** (installable package `orqestra`). Runtime config and data stay at the repo root.
+
+**HTTP entry (after `pip install -e .`):** `uvicorn orqestra.api.app:app` (recommended) or `uvicorn orqestra.gateway_api:app` (same `app`, thin wrapper module).
+
 ```
-cod-agent/
-├── core/
-│   ├── capabilities.py     # Capability system
-│   ├── engine.py           # Conversation loop
-│   └── display.py          # CLI display (spinner, colors, banner)
-├── capabilities/
-│   ├── knowledge.py        # Knowledge base (FTS5 search, three-layer wiki)
-│   ├── research.py         # Web research (Brave, SearXNG, URL extraction)
-│   ├── browser_core.py     # Shared Playwright/Chromium session (scrape + SEO)
-│   ├── browser_seo.py      # analyze_page_seo — meta, JSON-LD, issues
-│   ├── browser_axe.py      # axe_wcag_scan — axe-core WCAG 2.2 AA
-│   ├── compute.py          # Python execution sandbox
-│   ├── data.py             # Data file reader (CSV, Excel, JSON)
-│   ├── charts.py           # Business chart generation (matplotlib)
-│   └── skills.py           # Skill management (list, read, create, update)
-├── knowledge_base/         # Three-layer wiki (raw → wiki → content)
-├── skills/                 # Reusable playbooks (wiki + business skills)
+orqestra/
+├── src/orqestra/
+│   ├── main.py                  CLI + optional API + Telegram
+│   ├── gateway_api.py           REST API standalone entry
+│   ├── gateway_telegram.py      Telegram standalone entry
+│   ├── api/                     FastAPI app, state, routers (chat, wiki, departments, jobs, pipelines, project, settings, …)
+│   ├── core/
+│   │   ├── engine.py            StrategyEngine (conversation loop)
+│   │   ├── bootstrap.py         build_engine(), config load/save
+│   │   ├── registry.py          DepartmentRegistry facade (+ split modules registry_*.py)
+│   │   ├── departments.py       Department facade (deep_work, proactive, jobs, …)
+│   │   ├── department.py        Department model + shared caps
+│   │   ├── deep_work.py         Deep Work 6-phase pipeline
+│   │   ├── proactive.py         Proactive prompts
+│   │   ├── jobs.py              Job types / events
+│   │   ├── pipelines.py         PipelineRunner
+│   │   ├── department_builder.py  Wizard + template installer
+│   │   ├── scheduler.py         APScheduler
+│   │   ├── job_store.py         SQLite job persistence
+│   │   ├── capabilities.py      Capability system
+│   │   └── display.py           CLI display
+│   └── capabilities/
+│       ├── knowledge.py         Wiki facade
+│       ├── kb_core.py           KnowledgeBase facade (+ kb_fts, kb_base, kb_navigation)
+│       ├── kb_capabilities.py   KB tool wiring
+│       ├── research.py          Web search + scraping
+│       ├── browser_core.py      Playwright/Chromium
+│       ├── browser_seo.py       SEO analysis
+│       ├── browser_axe.py       WCAG (axe-core)
+│       ├── compute.py           Python sandbox
+│       ├── data.py              File readers
+│       ├── charts.py            Charts
+│       ├── files.py             Upload / vision
+│       └── skills.py            Skills
+├── config.yaml                  LLM, engine, gateway, proactive
+├── project.yaml                 Project context (Web UI)
+├── departments.yaml             Department definitions
+├── pipelines.yaml               Orchestrator pipelines
+├── templates/                   Pre-built department templates
+├── departments/               Per-department folders (installed)
 ├── personas/
-│   └── strategist.md       # Agent persona with wiki rules
-├── config.yaml
-├── main.py                 # Entry point
-├── pyproject.toml          # Package config (provides `cod` command)
+├── skills/                    Shared orchestrator skills
+├── knowledge_base/            Shared wiki
+├── web/                       React frontend (Vite + TypeScript)
+├── tests/                     pytest
 ├── Dockerfile
 ├── compose.yaml
-└── requirements.txt
+├── pyproject.toml
+└── requirements.txt           delegates to editable install (see pyproject.toml)
 ```
+
+## Knowledge base (per department)
+
+Each department has its own three-layer wiki:
+
+```
+knowledge_base/
+├── raw/          Immutable sources (input)
+├── wiki/         Structured, interlinked pages (processing)
+│   ├── index.md, log.md, memory.md
+│   ├── topics/, trends/, regulation/
+│   ├── market/, players/, sources/, synthesis/
+└── content/      Optional drafts and outputs (template-dependent)
+```
+
+Scaffold files (`index.md`, `log.md`, `memory.md`) are created automatically on first run.
+
+## Self-improvement
+
+After completing complex tasks (3+ tool calls), the agent offers to create reusable skills. Skills are versioned and updated based on experience.
 
 ## License
 
