@@ -3,6 +3,9 @@ FROM node:22-slim AS web-build
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
+# pyproject.toml is the single source of truth for the app version;
+# vite.config.ts reads it at build time and bakes it into the bundle.
+COPY pyproject.toml /pyproject.toml
 COPY web/ .
 RUN npm run build
 

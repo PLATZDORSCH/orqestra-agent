@@ -4,11 +4,22 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 function readPyprojectVersion(): string {
+  const isProdBuild = process.argv.includes('build')
+  const pyprojectPath = resolve(__dirname, '..', 'pyproject.toml')
   try {
-    const pyproject = readFileSync(resolve(__dirname, '..', 'pyproject.toml'), 'utf-8')
+    const pyproject = readFileSync(pyprojectPath, 'utf-8')
     const m = pyproject.match(/^\s*version\s*=\s*"([^"]+)"/m)
-    return m?.[1] ?? '0.0.0'
-  } catch {
+    if (!m) {
+      const msg = `[vite] pyproject.toml at ${pyprojectPath} has no version field`
+      if (isProdBuild) throw new Error(msg)
+      console.warn(`${msg} — falling back to 0.0.0`)
+      return '0.0.0'
+    }
+    return m[1]
+  } catch (err) {
+    const msg = `[vite] could not read ${pyprojectPath}: ${(err as Error).message}`
+    if (isProdBuild) throw new Error(msg)
+    console.warn(`${msg} — falling back to 0.0.0`)
     return '0.0.0'
   }
 }
