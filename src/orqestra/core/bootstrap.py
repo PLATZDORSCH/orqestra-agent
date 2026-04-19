@@ -111,10 +111,18 @@ def load_memory_prompt(kb_path: Path, cfg: dict, *, language: str | None = None)
 
 
 def resolve_env(value: str) -> str:
-    """Resolve ${ENV_VAR} placeholders in config values."""
+    """Resolve ``${ENV_VAR}`` and ``${ENV_VAR:-default}`` placeholders in config values.
+
+    Posix-style default syntax: when ``ENV_VAR`` is unset *or empty*, ``default`` is used.
+    Without a default, an unset/empty variable resolves to ``""``.
+    """
     if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
-        env_name = value[2:-1]
-        return os.getenv(env_name, "")
+        body = value[2:-1]
+        if ":-" in body:
+            env_name, default = body.split(":-", 1)
+        else:
+            env_name, default = body, ""
+        return os.getenv(env_name) or default
     return value
 
 
@@ -228,6 +236,17 @@ def _auto_install_department_templates(root: Path, language: str | None) -> list
             "skills": f"departments/{name}/skills",
             "capabilities": shared_caps,
         }
+        pm_path = root / "templates" / "proactive_missions" / f"{name}.yaml"
+        if pm_path.is_file():
+            try:
+                with open(pm_path, encoding="utf-8") as pmf:
+                    proactive_block = yaml.safe_load(pmf) or {}
+                if isinstance(proactive_block, dict) and proactive_block:
+                    dept_cfg["proactive"] = proactive_block
+            except Exception:
+                _log.getLogger(__name__).warning(
+                    "Skipping invalid proactive mission template: %s", pm_path, exc_info=True,
+                )
         installed.append(dept_cfg)
 
     if installed:
@@ -236,6 +255,37 @@ def _auto_install_department_templates(root: Path, language: str | None) -> list
             "Auto-installed %d department template(s): %s",
             len(installed),
             ", ".join(d["name"] for d in installed),
+        )
+    return installed
+
+
+def _auto_install_pipeline_templates(
+    runner: PipelineRunner,
+    available_dept_names: set[str],
+    language: str | None,
+) -> list[str]:
+    """Install pipeline templates from templates/pipelines/ when pipelines.yaml is empty."""
+    import logging as _log
+
+    from orqestra.core.pipelines import install_pipeline_template, list_pipeline_templates
+
+    if runner.pipelines:
+        return []
+    installed: list[str] = []
+    for tpl in list_pipeline_templates():
+        required = set(tpl.get("required_departments") or [])
+        if required and not required.issubset(available_dept_names):
+            continue
+        try:
+            install_pipeline_template(tpl["name"], runner, language=language)
+            installed.append(tpl["name"])
+        except ValueError:
+            pass
+    if installed:
+        _log.getLogger(__name__).info(
+            "Auto-installed %d pipeline template(s): %s",
+            len(installed),
+            ", ".join(installed),
         )
     return installed
 
@@ -259,7 +309,7 @@ def build_engine(
 
     base_url = resolve_env(llm_cfg.get("base_url", "https://api.openai.com/v1"))
     api_key = resolve_env(llm_cfg.get("api_key", "${OPENAI_API_KEY}"))
-    model = model_override or llm_cfg.get("model", "gpt-4o")
+    model = model_override or resolve_env(llm_cfg.get("model", "gpt-4o-mini"))
     language = engine_cfg.get("language")
 
     kb_path = Path(kb_cfg.get("path", ROOT / "knowledge_base"))
@@ -342,6 +392,9 @@ def build_engine(
     registry.set_proactive_iterations(int(proactive_cfg.get("iterations", 6)))
 
     pipeline_runner = PipelineRunner(ROOT, registry, job_store)
+    if not pipeline_runner.pipelines and departments_cfg:
+        available = {d.get("name") for d in departments_cfg if d.get("name")}
+        _auto_install_pipeline_templates(pipeline_runner, available, language)
 
     mgr = CapabilityManager()
 

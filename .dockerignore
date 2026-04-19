@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+venv/
+.env
+.mypy_cache/
+.pytest_cache/
+data/
+.obsidian/
+.fts_index.db
+web/node_modules/
+web/dist/
+web/dist-ssr/

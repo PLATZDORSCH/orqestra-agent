@@ -76,6 +76,10 @@ class DepartmentJob:
     # Optional: set when job is part of an orchestrator pipeline run
     pipeline_run_id: str | None = None
 
+    # Proactive multi-phase: which mission template was used (if any)
+    proactive_mission_id: str | None = None
+    proactive_mission_label: str | None = None
+
     # Persisted fields (set when job finishes or loaded from DB)
     finished_at: float | None = None
     _stored_result: str | None = field(default=None, repr=False)
@@ -163,6 +167,8 @@ class DepartmentJob:
             "eval_status": self.eval_status,
             "progress_pct": self.progress_pct,
             "pipeline_run_id": self.pipeline_run_id,
+            "proactive_mission_id": self.proactive_mission_id,
+            "proactive_mission_label": self.proactive_mission_label,
         }
 
     @staticmethod
@@ -197,4 +203,6 @@ class DepartmentJob:
             eval_status=rec.get("eval_status"),
             progress_pct=int(rec.get("progress_pct") or 0),
             pipeline_run_id=rec.get("pipeline_run_id"),
+            proactive_mission_id=rec.get("proactive_mission_id"),
+            proactive_mission_label=rec.get("proactive_mission_label"),
         )

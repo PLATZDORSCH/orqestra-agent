@@ -12,18 +12,18 @@ Instead of one monolithic agent, Orqestra runs **departments** — focused sub-a
 
 - **Multi-department architecture** — specialized sub-agents with independent knowledge bases
 - **Deep Work mode** — iterative execution with structured self-evaluation and progress tracking
-- **Proactive pipeline** — departments autonomously research and write wiki content on a configurable schedule
+- **Proactive pipeline** — per-department **missions** (prompt templates), **strategy** (rotate / random / all), and **cron** schedule; the global `proactive` block in `config.yaml` is the master switch
 - **Department templates** — install pre-built departments (Market Research, Content Creation, Competitive Intelligence) with one click
 - **Obsidian-style link graph** — force-directed visualization of wiki pages, their links, shared tags and job clusters (not a semantic knowledge graph)
 - **FTS5 fuzzy search** — full-text search with fuzzy matching and suggestions
 - **i18n personas** — English default with German locale fallback (`.de.md`)
-- **Project context** — define your company/project in `config.yaml` to give all agents shared context
+- **Project context** — define your company/project in `project.yaml` to give all agents shared context
 - **Four interfaces** — CLI, REST API, Web UI, and Telegram — all sharing the same state
 
 ## Architecture
 
 ```
-User ──▸ Orchestrator ──▸ delegate("seo", "audit platzdorsch.de")
+User ──▸ Orchestrator ──▸ delegate("seo", "audit example.com")
               │                    ↓
               │              SEO Department
               │              ├── persona (SEO specialist)
@@ -39,8 +39,9 @@ User ──▸ Orchestrator ──▸ delegate("seo", "audit platzdorsch.de")
               ├──▸ cross_department_search("keyword research")
               │         → searches ALL department wikis
               │
-              └──▸ Proactive Scheduler (cron)
-                         → departments run multi-phase proactive jobs
+              └──▸ Proactive Scheduler (APScheduler)
+                         → one cron job per department (fallback schedule from config.yaml)
+                         → multi-phase proactive jobs (missions or generic prompt)
 ```
 
 ## Deep Work mode
@@ -55,17 +56,65 @@ Use `mode: "deep"` when delegating tasks (API `POST /api/departments/{name}/jobs
 
 ## Proactive departments
 
-Departments can work autonomously on a schedule:
+Departments can work autonomously on a schedule.
 
-1. **Configure** in `config.yaml`:
-   ```yaml
-   proactive:
-     enabled: true
-     schedule: "0 6 * * *"    # cron: daily at 06:00
-     iterations: 6            # pipeline phases (Researcher / Critic / Validator), max 6
-   ```
-2. Each proactive job runs a **multi-phase pipeline** (same department LLM, rotating roles): Recherche → Kritik → Nachrecherche → zweite Kritik → Plausibilität → finale Speicherung mit `kb_write`. Tool events show roles (`RESEARCHER`, `CRITIC`, `VALIDATOR`) in the Jobs UI.
-3. **Manual trigger**: CLI `/proactive trigger`, Telegram `/proactive trigger`, or `POST /api/proactive/trigger` (authenticated).
+### Global switch (`config.yaml`)
+
+```yaml
+proactive:
+  enabled: true                     # master switch — if false, no scheduler (manual triggers still work)
+  schedule: "0 6 * * *"             # default cron when a department has no own schedule
+  iterations: 6                     # pipeline phases (Researcher / Critic / Validator), max 6
+```
+
+Requires `pip install apscheduler`. The scheduler registers **one cron job per department** that has `proactive.enabled: true` in `departments.yaml`. Each department may set its own `schedule`; otherwise the global `proactive.schedule` above is used.
+
+### Per-department missions (`departments.yaml`)
+
+Optional block:
+
+```yaml
+- name: competitive-intel
+  label: Competitive Intelligence
+  # ... persona, knowledge_base, skills, capabilities ...
+  proactive:
+    enabled: true
+    schedule: "0 6 * * 1"         # optional; omit to use global default
+    strategy: rotate               # rotate | random | all
+    missions:
+      - id: competitor-news
+        label: "Competitor news scan"
+        prompt: |
+          Scan news and PR for our top competitors (see wiki/akteure/…) for the last 7 days.
+```
+
+- **strategy `rotate`**: missions run in order; index is persisted in SQLite (`proactive_state` table).
+- **strategy `random`**: pick one mission at random each tick.
+- **strategy `all`**: enqueue **one job per mission** on each tick.
+
+With **no** `missions` list, the run uses the **generic** proactive prompt (autonomous topic choice), same as before.
+
+**First-time install**: department templates can merge default missions from `templates/proactive_missions/<department-name>.yaml` (see repo).
+
+### Pipeline behaviour
+
+Each proactive job runs the **multi-phase pipeline** (same department LLM, rotating roles): research → critique → … → final `kb_write`. Tool events show roles (`RESEARCHER`, `CRITIC`, `VALIDATOR`) in the Jobs UI. When a mission is selected, its prompt is injected under **Mission (this run)** in phase 1.
+
+### Manual triggers
+
+- All departments (respects per-dept `enabled`): `POST /api/proactive/trigger`, Telegram `/proactive trigger`, CLI (when wired).
+- One department: `POST /api/departments/{name}/proactive`, optional query `?mission_id=<id>` for a specific mission.
+- **Web UI**: Department page tab **Proactive** (missions + schedule); Jobs page **Proactive run** menu lists default + each mission per department.
+
+### Default mission packs (auto-install)
+
+| Department template | Schedule (example) | Mission ids (summary) |
+|---|---|---|
+| `competitive-intel` | Weekly Mon 06:00 | competitor-news, positioning-shift, new-entrants, pricing-watch |
+| `market-research` | Weekly Mon 06:00 | industry-trends, tam-update, audience-signals, regulation-watch |
+| `content-creation` | Daily 06:00 | topic-radar, evergreen-refresh, format-experiments |
+| `finanzen` | Monthly 1st 06:00 | cost-anomaly-scan, benchmarks-update, fx-and-rates-watch |
+| `wissens-und-contentextraktor` | Daily 06:00 | source-sweep, stale-content-flag |
 
 ## Department templates
 
@@ -83,11 +132,15 @@ Install via:
 
 Templates include English and German personas, so they adapt to your `engine.language` setting.
 
+## Department Builder: starter skills
+
+When you create a department from the Web UI and leave the **skills** step empty, `POST /api/departments` **auto-generates** up to three starter skills from your persona (LLM: `suggest_skills_for_department`, then `generate_skill_content` per suggestion). If generation fails, two generic fallback skills are installed (“Getting started” / “Wiki documentation” in EN, or the German equivalents). You can edit or add skills anytime after creation.
+
 ## Project context
 
-Beim ersten Öffnen der Web UI erscheint ein **Setup-Wizard**, der nach Unternehmen, Schwerpunkten und Zielmarkt fragt. Die Angaben werden in `project.yaml` gespeichert und in den System-Prompt aller Agents injiziert.
+On first launch the Web UI shows a **setup wizard** that asks for company, focus areas and target market. Answers are saved to `project.yaml` and injected into the system prompt of every agent.
 
-Alternativ `project.yaml` direkt bearbeiten:
+You can also edit `project.yaml` directly:
 
 ```yaml
 name: "Acme Corp"
@@ -98,7 +151,7 @@ target_market: "SMB in DACH region"
 notes: "Focus on privacy-first solutions and local AI"
 ```
 
-In der Web UI unter **Einstellungen** jederzeit änderbar.
+The same form is available any time under **Settings** in the Web UI.
 
 ## Capabilities
 
@@ -124,40 +177,41 @@ In der Web UI unter **Einstellungen** jederzeit änderbar.
 
 ## Installation
 
-### Voraussetzungen
+### Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) und [Docker Compose](https://docs.docker.com/compose/)
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/)
 
 ### Setup
 
 ```bash
-git clone <repo-url>
-cd orqestra
+git clone https://github.com/PLATZDORSCH/orqestra-agent.git
+cd orqestra-agent
 ```
 
 ```bash
 export OPENAI_API_KEY="sk-..."
 ```
 
-Dann starten (Docker baut das Image beim ersten Mal automatisch, inkl. Frontend):
+Then start (Docker builds the image on first run, including the frontend):
 
 ```bash
 docker compose up
 ```
 
-Das war's. Die Web UI ist danach unter **http://localhost:4200** erreichbar.
+That's it. The Web UI is available at **http://localhost:4200**.
 
 ## Configuration
 
-Orqestra nutzt diese Konfigurationsdateien:
+Orqestra uses these configuration files:
 
-| Datei | Inhalt |
+| File | Purpose |
 |---|---|
-| `config.yaml` | LLM, Engine, API, Telegram, Proactive-Schedule … |
-| `project.yaml` | Projekt-Kontext (Unternehmen, Markt, Fokus) — per Web UI editierbar |
-| `pipelines.yaml` | Orchestrierungs-Pipelines (sequenzielle Department-Ketten) — per Web UI **Pipelines** oder manuell |
+| `config.yaml` | LLM, engine, API, Telegram, proactive schedule … |
+| `project.yaml` | Project context (company, market, focus) — editable from the Web UI |
+| `departments.yaml` | Department definitions — editable from the Web UI Department Builder or by hand |
+| `pipelines.yaml` | Orchestrator pipelines (sequential department chains) — editable from the Web UI **Pipelines** tab or by hand |
 
-Beim ersten Öffnen der Web UI fragt ein **Setup-Wizard** den Projekt-Kontext ab und schreibt `project.yaml`. Danach jederzeit unter **Einstellungen** änderbar. Docker liest die Dateien beim Start ein — nach Änderungen Container neu starten (außer Pipelines/Departments, die oft auch per API zur Laufzeit aktualisiert werden).
+On first launch the Web UI shows a **setup wizard** that asks for project context and writes `project.yaml`. You can change everything later under **Settings**. Docker reads these files at startup — restart the container after manual edits (except pipelines/departments, which are usually editable at runtime via the API).
 
 ### Departments
 
@@ -169,7 +223,7 @@ Orqestra starts **without any departments** — on first launch only the orchest
 
 ### Pipelines (Orchestrator)
 
-Mehrstufige Abläufe über mehrere Departments nacheinander: Definitionen in `pipelines.yaml`, Steuerung über die Web UI unter **/pipelines** oder die Orchestrator-Tools **`run_pipeline`** / **`check_pipeline`**. Jeder Schritt ist ein normales Department-Job; Ergebnisse können per `result_key` und `{Platzhalter}` an folgende Schritte weitergereicht werden.
+Multi-step workflows that chain several departments together: definitions in `pipelines.yaml`, control via the Web UI under **/pipelines** or via the orchestrator tools **`run_pipeline`** / **`check_pipeline`**. Each step is a normal department job; results can be passed to subsequent steps via `result_key` and `{placeholder}` substitution.
 
 ### i18n
 
@@ -187,6 +241,8 @@ export BRAVE_API_KEY="..."       # Brave Search
 export SEARXNG_URL="http://..."  # Self-hosted SearXNG
 ```
 
+**Research / `web_search` limits (background jobs):** Each department job shares one budget of **30** `web_search` calls. Identical normalized queries are **deduplicated** (cache hit per job). The tool clamps `count` to **1–10** results per request. Interactive chat (orchestrator / department SSE) does not apply this budget unless a `research_budget` is passed.
+
 ## Interfaces
 
 Orqestra has **four interfaces** that can be combined or used independently:
@@ -200,51 +256,51 @@ Orqestra has **four interfaces** that can be combined or used independently:
 
 ### Starting options
 
-**Headless — API + Web + Telegram (empfohlen für Server):**
+**Headless — API + Web + Telegram (recommended for servers):**
 
 ```bash
 docker compose up -d
 ```
 
-**Interaktiv — mit CLI-REPL im Terminal:**
+**Interactive — with the CLI REPL in your terminal:**
 
 ```bash
 docker compose run --service-ports --rm orqestra
 ```
 
-> `--service-ports` ist nötig, damit Port 4200 erreichbar ist. Das Docker-Image baut das Web-Frontend automatisch (Multi-Stage-Build mit Node.js).
+> `--service-ports` is required so port 4200 is reachable. The Docker image builds the web frontend automatically (multi-stage build with Node.js).
 
-**Einzelne Anfrage (non-interactive):**
+**Single non-interactive request:**
 
 ```bash
 docker compose run --rm orqestra orqestra --query "Analyze competitor X"
 ```
 
-**Zusätzliche Flags:**
+**Additional flags:**
 
-| Flag | Wirkung |
+| Flag | Effect |
 |---|---|
-| `--model gpt-4o-mini` | LLM-Modell überschreiben |
-| `--verbose` / `-v` | Debug-Logging |
-| `--no-telegram` | Telegram deaktivieren (auch wenn in config aktiv) |
-| `--no-web` | Web UI deaktivieren |
+| `--model gpt-4o-mini` | Override the LLM model |
+| `--verbose` / `-v` | Debug logging |
+| `--no-telegram` | Disable Telegram (even if enabled in config) |
+| `--no-web` | Disable the Web UI |
 
 ### Web UI
 
-Das React-Frontend liegt in `web/`. Wenn `api.enabled` und `web.enabled` in `config.yaml` aktiv sind, liefert die API die gebauten statischen Dateien aus `web/dist/` auf demselben Port wie die REST API (Standard: **4200**).
+The React frontend lives in `web/`. When `api.enabled` and `web.enabled` are set in `config.yaml`, the API serves the built static files from `web/dist/` on the same port as the REST API (default: **4200**).
 
-Das Dockerfile baut das Frontend automatisch — kein manueller Schritt nötig.
+The Dockerfile builds the frontend automatically — no manual step required.
 
-**Entwicklung (Hot Reload, ohne Docker):**
+**Development (hot reload, without Docker):**
 
 ```bash
-cd web && npm run dev     # Vite Dev-Server auf Port 4201
-orqestra                  # API auf Port 4200 (separates Terminal)
+cd web && npm run dev     # Vite dev server on port 4201
+orqestra                  # API on port 4200 (separate terminal)
 ```
 
 ### Telegram
 
-Long Polling — no inbound port needed. Shares `config.yaml`, wiki, and skills with the other interfaces.
+Long polling — no inbound port required. Shares `config.yaml`, the wiki, and skills with the other interfaces.
 
 #### Setting up the bot
 
@@ -325,17 +381,17 @@ orqestra/
 ├── project.yaml                 Project context (Web UI)
 ├── departments.yaml             Department definitions
 ├── pipelines.yaml               Orchestrator pipelines
-├── templates/                   Pre-built department templates
-├── departments/               Per-department folders (installed)
+├── templates/                   Pre-built department templates + `proactive_missions/*.yaml`
+├── departments/                 Per-department folders (installed)
 ├── personas/
-├── skills/                    Shared orchestrator skills
-├── knowledge_base/            Shared wiki
-├── web/                       React frontend (Vite + TypeScript)
-├── tests/                     pytest
+├── skills/                      Shared orchestrator skills
+├── knowledge_base/              Shared wiki
+├── web/                         React frontend (Vite + TypeScript)
+├── tests/                       pytest
 ├── Dockerfile
 ├── compose.yaml
 ├── pyproject.toml
-└── requirements.txt           delegates to editable install (see pyproject.toml)
+└── requirements.txt             delegates to editable install (see pyproject.toml)
 ```
 
 ## Knowledge base (per department)
@@ -356,8 +412,12 @@ Scaffold files (`index.md`, `log.md`, `memory.md`) are created automatically on 
 
 ## Self-improvement
 
-After completing complex tasks (3+ tool calls), the agent offers to create reusable skills. Skills are versioned and updated based on experience.
+After completing complex tasks (3+ tool calls), the agent offers to create reusable skills. Skills are versioned and updated based on experience. The agent always asks before creating or modifying a skill — there is no silent self-modification.
+
+## Contributing
+
+Bug reports and pull requests are welcome at <https://github.com/PLATZDORSCH/orqestra-agent>. See `CHANGELOG.md` for release notes.
 
 ## License
 
-MIT
+[MIT](./LICENSE) — Copyright (c) 2026 Tim Dau / PLATZDORSCH Softwareentwicklung

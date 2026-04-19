@@ -73,6 +73,21 @@ class JobStore:
                     error         TEXT
                 );
             """)
+            self._db.executescript("""
+                CREATE TABLE IF NOT EXISTS proactive_state (
+                    department           TEXT PRIMARY KEY,
+                    last_mission_index   INTEGER NOT NULL DEFAULT 0
+                );
+            """)
+            for col_sql in (
+                "ALTER TABLE jobs ADD COLUMN proactive_mission_id TEXT",
+                "ALTER TABLE jobs ADD COLUMN proactive_mission_label TEXT",
+            ):
+                try:
+                    self._db.execute(col_sql)
+                except sqlite3.OperationalError as e:
+                    if "duplicate column" not in str(e).lower():
+                        raise
             self._db.commit()
 
     def save(self, record: dict[str, Any]) -> None:
@@ -81,8 +96,8 @@ class JobStore:
             self._db.execute(
                 "INSERT OR REPLACE INTO jobs "
                 "(id, department, task, status, result, error, started_at, finished_at, history, events, "
-                "mode, max_iterations, current_iteration, pipeline_run_id) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "mode, max_iterations, current_iteration, pipeline_run_id, proactive_mission_id, proactive_mission_label) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     record["id"],
                     record["department"],
@@ -98,6 +113,8 @@ class JobStore:
                     int(record.get("max_iterations", 1)),
                     int(record.get("current_iteration", 0)),
                     record.get("pipeline_run_id"),
+                    record.get("proactive_mission_id"),
+                    record.get("proactive_mission_label"),
                 ),
             )
             self._db.commit()
@@ -107,7 +124,8 @@ class JobStore:
         with self._lock:
             row = self._db.execute(
                 "SELECT id, department, task, status, result, error, "
-                "started_at, finished_at, history, events, mode, max_iterations, current_iteration, pipeline_run_id "
+                "started_at, finished_at, history, events, mode, max_iterations, current_iteration, pipeline_run_id, "
+                "proactive_mission_id, proactive_mission_label "
                 "FROM jobs WHERE id=?",
                 (job_id,),
             ).fetchone()
@@ -120,7 +138,8 @@ class JobStore:
         with self._lock:
             rows = self._db.execute(
                 "SELECT id, department, task, status, result, error, "
-                "started_at, finished_at, history, events, mode, max_iterations, current_iteration, pipeline_run_id "
+                "started_at, finished_at, history, events, mode, max_iterations, current_iteration, pipeline_run_id, "
+                "proactive_mission_id, proactive_mission_label "
                 "FROM jobs "
                 "ORDER BY started_at DESC LIMIT ?",
                 (limit,),
@@ -131,7 +150,8 @@ class JobStore:
         with self._lock:
             rows = self._db.execute(
                 "SELECT id, department, task, status, result, error, "
-                "started_at, finished_at, history, events, mode, max_iterations, current_iteration, pipeline_run_id "
+                "started_at, finished_at, history, events, mode, max_iterations, current_iteration, pipeline_run_id, "
+                "proactive_mission_id, proactive_mission_label "
                 "FROM jobs "
                 "WHERE department=? ORDER BY started_at DESC LIMIT ?",
                 (dept, limit),
@@ -154,7 +174,8 @@ class JobStore:
             if department:
                 rows = self._db.execute(
                     "SELECT id, department, task, status, result, error, "
-                    "started_at, finished_at, history, events, mode, max_iterations, current_iteration, pipeline_run_id "
+                    "started_at, finished_at, history, events, mode, max_iterations, current_iteration, pipeline_run_id, "
+                    "proactive_mission_id, proactive_mission_label "
                     "FROM jobs "
                     "WHERE status=? AND department=? "
                     "ORDER BY started_at DESC LIMIT ?",
@@ -163,7 +184,8 @@ class JobStore:
             else:
                 rows = self._db.execute(
                     "SELECT id, department, task, status, result, error, "
-                    "started_at, finished_at, history, events, mode, max_iterations, current_iteration, pipeline_run_id "
+                    "started_at, finished_at, history, events, mode, max_iterations, current_iteration, pipeline_run_id, "
+                    "proactive_mission_id, proactive_mission_label "
                     "FROM jobs "
                     "WHERE status=? ORDER BY started_at DESC LIMIT ?",
                     (status, limit),
@@ -189,6 +211,8 @@ class JobStore:
         max_it = int(row[11]) if len(row) > 11 and row[11] is not None else 1
         cur_it = int(row[12]) if len(row) > 12 and row[12] is not None else 0
         pipeline_run_id = row[13] if len(row) > 13 else None
+        proactive_mission_id = row[14] if len(row) > 14 else None
+        proactive_mission_label = row[15] if len(row) > 15 else None
         return {
             "id": row[0],
             "department": row[1],
@@ -204,6 +228,8 @@ class JobStore:
             "max_iterations": max_it,
             "current_iteration": cur_it,
             "pipeline_run_id": pipeline_run_id,
+            "proactive_mission_id": proactive_mission_id,
+            "proactive_mission_label": proactive_mission_label,
         }
 
     def save_pipeline_run(self, record: dict[str, Any]) -> None:
@@ -275,3 +301,22 @@ class JobStore:
             cur = self._db.execute("DELETE FROM pipeline_runs WHERE id=?", (run_id,))
             self._db.commit()
             return cur.rowcount > 0
+
+    def get_proactive_mission_index(self, department: str) -> int:
+        """Last rotation index for proactive missions (strategy: rotate)."""
+        with self._lock:
+            row = self._db.execute(
+                "SELECT last_mission_index FROM proactive_state WHERE department=?",
+                (department,),
+            ).fetchone()
+        if not row:
+            return 0
+        return int(row[0] or 0)
+
+    def set_proactive_mission_index(self, department: str, index: int) -> None:
+        with self._lock:
+            self._db.execute(
+                "INSERT OR REPLACE INTO proactive_state (department, last_mission_index) VALUES (?, ?)",
+                (department, int(index)),
+            )
+            self._db.commit()

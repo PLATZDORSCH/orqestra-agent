@@ -1,0 +1,15 @@
+# Standardmäßig deaktiviert — im Department-Tab "Proaktive Missionen" einschalten.
+enabled: false
+schedule: "0 6 * * *"
+strategy: rotate
+missions:
+  - id: source-sweep
+    label: Quellen-Sweep
+    prompt: |
+      Prüfe in `wiki/memory.md` und verknüpften Notizen definierte Quellen-Feeds oder URLs auf neue
+      Inhalte seit dem letzten Lauf. Liste neue Fundstücke mit kurzer Einordnung.
+  - id: stale-content-flag
+    label: Veraltete Inhalte
+    prompt: |
+      Finde Wiki-Seiten, die älter als 6 Monate sind und offensichtlich überholt wirken (veraltete Zahlen,
+      Produkte, Links). Priorisiere nach Relevanz für das Kerngeschäft.

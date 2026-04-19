@@ -601,7 +601,7 @@ def build_application(gw: TelegramGateway, token: str) -> Application:
         if len(args_text) >= 2 and args_text[1].lower() == "trigger":
             from orqestra.core.scheduler import trigger_now
             count = trigger_now(gw.registry)
-            await update.message.reply_text(f"Proaktive Jobs für {count} Departments gestartet.")
+            await update.message.reply_text(f"{count} proaktive Job(s) gestartet.")
         else:
             await update.message.reply_text("Usage: /proactive trigger")
 

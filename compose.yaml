@@ -1,14 +1,28 @@
 services:
-  cod:
+  orqestra:
     build: .
+    image: orqestra:latest
     # Playwright/Chromium: avoid OOM/crashes when rendering pages
     shm_size: "1gb"
     stdin_open: true
     tty: true
+    ports:
+      - "4200:4200"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-}
       - BRAVE_API_KEY=${BRAVE_API_KEY:-}
       - SEARXNG_URL=${SEARXNG_URL:-}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
     volumes:
+      # Configuration (edit on the host, restart the container to apply)
+      - ./config.yaml:/app/config.yaml
+      - ./project.yaml:/app/project.yaml
+      - ./departments.yaml:/app/departments.yaml
+      - ./pipelines.yaml:/app/pipelines.yaml
+      # Persistent state — created on first run if missing
+      - ./departments:/app/departments
       - ./knowledge_base:/app/knowledge_base
       - ./skills:/app/skills
+      - ./data:/app/data

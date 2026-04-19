@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import shutil
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 
 from orqestra.api.constants import ROOT
 from orqestra.api.language_utils import resolve_ui_language
@@ -13,18 +13,22 @@ from orqestra.api.models import (
     BuilderChatRequest,
     ChatToJobRequest,
     CreateDepartmentRequest,
+    ProactiveConfigAPIModel,
     SkillGenerateRequest,
     SkillSaveRequest,
     SkillSuggestRequest,
     TaskRequest,
 )
 from orqestra.api.state import check_auth, state, sync_orchestrator_pipeline_artifacts
+from orqestra.core.bootstrap import build_project_context, resolve_env
+from orqestra.core.proactive_models import effective_proactive
 from orqestra.api.wiki import sync_department_links
 from orqestra.core.deep_work import formulate_job_task_from_chat
 from orqestra.core.department_builder import (
     BUILDER_STEP_PROMPTS_EN,
     SkillDraft,
     create_department_from_builder,
+    fallback_starter_skills,
     generate_skill_content,
     run_builder_chat_llm,
     save_skill_draft_to_directory,
@@ -41,6 +45,42 @@ from orqestra.core.departments import (
 log = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def _registry_reload_params() -> dict:
+    cfg = state._cfg
+    llm = cfg.get("llm") or {}
+    engine_cfg = cfg.get("engine") or {}
+    return {
+        "root": ROOT,
+        "llm_base_url": resolve_env(llm.get("base_url", "https://api.openai.com/v1")),
+        "llm_api_key": resolve_env(llm.get("api_key", "${OPENAI_API_KEY}")),
+        "llm_model": llm.get("model", "gpt-4o"),
+        "language": engine_cfg.get("language"),
+        "context_window": int(engine_cfg.get("context_window", 0)),
+        "summarize_at": float(engine_cfg.get("summarize_at", 0.7)),
+        "project_context": build_project_context(cfg),
+    }
+
+
+def _reload_department_from_yaml(name: str) -> None:
+    """Re-read one department row from disk and swap it in the registry."""
+    n = name.strip().lower()
+    rows = load_departments_yaml(ROOT)
+    row = next((r for r in rows if r.get("name") == n), None)
+    if not row:
+        raise HTTPException(404, f"Unknown department: {n}")
+    state.registry.remove_department(n)
+    state.registry.add_department(row, **_registry_reload_params())
+
+
+def _sync_proactive_scheduler_if_enabled() -> None:
+    pc = (state._cfg or {}).get("proactive") or {}
+    if not pc.get("enabled"):
+        return
+    from orqestra.core.scheduler import sync_department_schedules
+
+    sync_department_schedules(state.registry, str(pc.get("schedule", "0 6 * * *")))
 
 
 @router.get("/api/capabilities")
@@ -76,10 +116,43 @@ def builder_chat(body: BuilderChatRequest, request: Request):
 @router.post("/api/departments")
 def create_department_api(body: CreateDepartmentRequest, request: Request):
     check_auth(request)
-    skills = [
-        SkillDraft(title=sk.title, description=sk.description, content=sk.content)
-        for sk in body.skills
-    ]
+    lang = resolve_ui_language(request, None)
+    if body.skills:
+        skills = [
+            SkillDraft(title=sk.title, description=sk.description, content=sk.content)
+            for sk in body.skills
+        ]
+    else:
+        skills: list[SkillDraft] = []
+        try:
+            suggestions = suggest_skills_for_department(
+                state.engine,
+                persona_text=body.persona_content,
+                department_label=body.label,
+                department_name=body.name,
+                existing_skill_titles=[],
+                language=lang,
+            )[:3]
+            if not suggestions:
+                raise ValueError("no skill suggestions from LLM")
+            for s in suggestions:
+                sk = generate_skill_content(
+                    state.engine,
+                    persona_text=body.persona_content,
+                    department_label=body.label,
+                    department_name=body.name,
+                    title=s["title"],
+                    description=s.get("description", ""),
+                    language=lang,
+                )
+                if not (sk.content or "").strip():
+                    raise ValueError("empty skill content from LLM")
+                skills.append(sk)
+        except Exception as exc:
+            log.warning("Auto skill generation failed, using fallback: %s", exc)
+            skills = fallback_starter_skills(lang)
+        if not skills:
+            skills = fallback_starter_skills(lang)
     try:
         result = create_department_from_builder(
             root=ROOT,
@@ -95,6 +168,7 @@ def create_department_api(body: CreateDepartmentRequest, request: Request):
         sync_department_links()
         state.main_kb.refresh_navigation_pages()
         sync_orchestrator_pipeline_artifacts()
+        _sync_proactive_scheduler_if_enabled()
         return result
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
@@ -130,6 +204,7 @@ def delete_department_api(name: str, request: Request):
     sync_orchestrator_pipeline_artifacts()
     sync_department_links()
     state.main_kb.refresh_navigation_pages()
+    _sync_proactive_scheduler_if_enabled()
 
     return {"ok": True, "deleted": name}
 
@@ -139,6 +214,7 @@ def list_departments(request: Request):
     check_auth(request)
     out = []
     for name, dept in state.registry.items():
+        pc = effective_proactive(dept.proactive)
         out.append({
             "name": name,
             "label": dept.label,
@@ -146,6 +222,15 @@ def list_departments(request: Request):
             "icon": dept.icon,
             "capabilities": dept.engine.capabilities.names(),
             "skills": dept.skills_summary(),
+            "proactive": {
+                "enabled": pc.enabled,
+                "schedule": pc.schedule,
+                "strategy": pc.strategy,
+                "missions": [
+                    {"id": m.id, "label": m.label, "prompt": m.prompt}
+                    for m in pc.missions
+                ],
+            },
         })
     return out
 
@@ -161,6 +246,7 @@ def topology(request: Request):
             for j in state.registry.jobs_for_display()
             if j.department == name and j.status() in ("running", "pending")
         )
+        pc = effective_proactive(dept.proactive)
         departments.append({
             "id": name,
             "label": dept.label,
@@ -168,6 +254,11 @@ def topology(request: Request):
             "icon": dept.icon,
             "skills_count": len(dept.skills_summary()),
             "active_jobs": active_jobs,
+            "proactive": {
+                "enabled": pc.enabled,
+                "schedule": pc.schedule,
+                "mission_count": len(pc.missions),
+            },
         })
     return {
         "orchestrator": {"id": "orchestrator", "label": "Orqestra"},
@@ -327,13 +418,15 @@ def create_department_job_from_chat(name: str, body: ChatToJobRequest, request: 
     dept = state.registry.get(name)
     if not dept:
         raise HTTPException(404, f"Unknown department: {name}. Available: {state.registry.names()}")
-    if not body.turns:
-        raise HTTPException(400, "Mindestens ein Chat-Turn erforderlich.")
+    draft_message = (body.draft_message or "").strip() or None
+    if not body.turns and not draft_message:
+        raise HTTPException(400, "Mindestens ein Chat-Turn oder ein Draft erforderlich.")
     try:
         task, task_summary = formulate_job_task_from_chat(
             dept.engine,
             department_label=dept.label,
             turns=body.turns,
+            draft_message=draft_message,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
@@ -352,20 +445,74 @@ def create_department_job_from_chat(name: str, body: ChatToJobRequest, request: 
     }
 
 
-@router.post("/api/departments/{name}/proactive")
-def trigger_department_proactive(name: str, request: Request):
-    """Submit a multi-phase proactive job for one department (autonomous topic research + kb_write)."""
+@router.get("/api/departments/{name}/proactive")
+def get_department_proactive(name: str, request: Request):
+    """Return proactive config + missions for the department editor."""
     check_auth(request)
-    dept = state.registry.get(name)
+    n = name.strip().lower()
+    dept = state.registry.get(n)
     if not dept:
-        raise HTTPException(404, f"Unknown department: {name}. Available: {state.registry.names()}")
+        raise HTTPException(404, f"Unknown department: {n}")
+    pc = effective_proactive(dept.proactive)
+    return {
+        "enabled": pc.enabled,
+        "schedule": pc.schedule,
+        "strategy": pc.strategy,
+        "missions": [
+            {"id": m.id, "label": m.label, "prompt": m.prompt}
+            for m in pc.missions
+        ],
+    }
+
+
+@router.put("/api/departments/{name}/proactive")
+def put_department_proactive(name: str, body: ProactiveConfigAPIModel, request: Request):
+    """Persist proactive block to ``departments.yaml`` and reload the department."""
+    check_auth(request)
+    n = name.strip().lower()
+    if not state.registry.get(n):
+        raise HTTPException(404, f"Unknown department: {n}")
+    rows = load_departments_yaml(ROOT)
+    found = False
+    proactive_dict = body.model_dump()
+    for i, r in enumerate(rows):
+        if r.get("name") == n:
+            rows[i]["proactive"] = proactive_dict
+            found = True
+            break
+    if not found:
+        raise HTTPException(404, f"Unknown department: {n}")
+    save_departments_yaml(ROOT, rows)
     try:
-        job = state.registry.submit_proactive_job(name)
+        _reload_department_from_yaml(n)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    update_orchestrator_persona_file(state.registry, ROOT)
+    sync_orchestrator_department_tools(state.engine, state.registry)
+    _sync_proactive_scheduler_if_enabled()
+    return {"ok": True, "department": n}
+
+
+@router.post("/api/departments/{name}/proactive")
+def trigger_department_proactive(
+    name: str,
+    request: Request,
+    mission_id: str | None = Query(None, description="Mission id, or omit for default rotation"),
+):
+    """Submit one or more multi-phase proactive jobs (missions or generic prompt)."""
+    check_auth(request)
+    n = name.strip().lower()
+    dept = state.registry.get(n)
+    if not dept:
+        raise HTTPException(404, f"Unknown department: {n}. Available: {state.registry.names()}")
+    try:
+        jobs = state.registry.submit_proactive_job(n, mission_id=mission_id)
     except RuntimeError as e:
         raise HTTPException(429, str(e)) from e
     return {
-        "job_id": job.id,
-        "department": name,
+        "job_ids": [j.id for j in jobs],
+        "submitted": len(jobs),
+        "department": n,
         "status": "submitted",
     }
 
@@ -395,6 +542,7 @@ def install_template_api(name: str, request: Request):
         sync_department_links()
         state.main_kb.refresh_navigation_pages()
         sync_orchestrator_pipeline_artifacts()
+        _sync_proactive_scheduler_if_enabled()
         return result
     except ValueError as e:
         raise HTTPException(400, str(e)) from e

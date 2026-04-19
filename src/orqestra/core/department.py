@@ -10,6 +10,8 @@ from orqestra.capabilities.knowledge import KnowledgeBase
 from orqestra.capabilities.skills import get_skills_summary_from
 from orqestra.core.capabilities import Capability
 from orqestra.core.engine import StrategyEngine
+from orqestra.core.proactive_models import ProactiveConfig
+from orqestra.core.research_budget import ResearchBudget
 
 from orqestra.capabilities.research import web_search, fetch_url
 from orqestra.capabilities.compute import run_script
@@ -67,6 +69,7 @@ class Department:
         *,
         color: str | None = None,
         icon: str | None = None,
+        proactive: ProactiveConfig | None = None,
     ) -> None:
         self.name = name
         self.label = label
@@ -75,6 +78,7 @@ class Department:
         self.skills_dir = skills_dir
         self.color = color
         self.icon = icon
+        self.proactive = proactive
         self._capability_lock = threading.Lock()
 
     def run(
@@ -86,6 +90,7 @@ class Department:
         on_tool_call: Any | None = None,
         on_thinking: Any | None = None,
         job_context: dict | None = None,
+        research_budget: ResearchBudget | None = None,
     ) -> str:
         return self.engine.run(
             task, history,
@@ -93,6 +98,7 @@ class Department:
             on_tool_call=on_tool_call,
             on_thinking=on_thinking,
             job_context=job_context,
+            research_budget=research_budget,
         )
 
     def search(self, query: str, limit: int = 5) -> list[dict]:

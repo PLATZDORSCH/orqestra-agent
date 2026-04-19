@@ -325,6 +325,74 @@ class SkillDraft:
     content: str = ""
 
 
+def fallback_starter_skills(language: str | None = None) -> list[SkillDraft]:
+    """Generic starter skills when LLM suggestion/generation fails (no department name in titles)."""
+    de = normalize_language(language) == "de"
+    if de:
+        return [
+            SkillDraft(
+                title="Einstieg",
+                description="Standardvorgehen für den ersten Auftrag in diesem Department",
+                content=(
+                    "## Wann nutzen\n\n"
+                    "- Wenn eine neue Aufgabe in diesem Bereich startet\n"
+                    "- Wenn noch kein passendes Playbook im Wiki existiert\n\n"
+                    "## Schritte\n\n"
+                    "1. Kontext und Ziel mit dem Nutzer oder der Aufgabenbeschreibung klären\n"
+                    "2. Wiki auf vorhandene Informationen prüfen (kb_search, kb_list)\n"
+                    "3. Recherche oder Analyse mit den passenden Tools durchführen\n"
+                    "4. Ergebnisse strukturiert aufbereiten und Quellen angeben\n"
+                    "5. Im passenden Wiki-Ordner speichern und Verknüpfungen setzen\n"
+                ),
+            ),
+            SkillDraft(
+                title="Wiki-Dokumentation",
+                description="Kurz-Checkliste für saubere Wiki-Einträge",
+                content=(
+                    "## Wann nutzen\n\n"
+                    "- Vor dem Speichern einer neuen oder überarbeiteten Wiki-Seite\n"
+                    "- Wenn mehrere Quellen zu einem Thema zusammenkommen\n\n"
+                    "## Schritte\n\n"
+                    "1. Einen klaren Seitentitel und genau einen Hauptfokus wählen\n"
+                    "2. Ordner wählen (akteure, recherche, wissen, ergebnisse — siehe Persona)\n"
+                    "3. Metadaten und ggf. Tags setzen; Duplikate vermeiden\n"
+                    "4. Kurze Zusammenfassung oben, Details und Quellen unten\n"
+                ),
+            ),
+        ]
+    return [
+        SkillDraft(
+            title="Getting started",
+            description="Default procedure for the first task in this department",
+            content=(
+                "## When to use\n\n"
+                "- When a new task in this area begins\n"
+                "- When no matching playbook exists in the wiki yet\n\n"
+                "## Steps\n\n"
+                "1. Clarify context and goal with the user or task description\n"
+                "2. Check the wiki for existing information (kb_search, kb_list)\n"
+                "3. Run research or analysis with the appropriate tools\n"
+                "4. Prepare results in a structured way and cite sources\n"
+                "5. Save into the matching wiki folder and add links\n"
+            ),
+        ),
+        SkillDraft(
+            title="Wiki documentation",
+            description="Short checklist for clean wiki entries",
+            content=(
+                "## When to use\n\n"
+                "- Before saving a new or revised wiki page\n"
+                "- When multiple sources converge on a topic\n\n"
+                "## Steps\n\n"
+                "1. Pick a clear page title with exactly one main focus\n"
+                "2. Choose the folder (akteure, recherche, wissen, ergebnisse — see persona)\n"
+                "3. Set metadata and tags; avoid duplicates\n"
+                "4. Short summary on top, details and sources below\n"
+            ),
+        ),
+    ]
+
+
 def save_skill_draft_to_directory(
     skills_dir: Path,
     dept_name: str,

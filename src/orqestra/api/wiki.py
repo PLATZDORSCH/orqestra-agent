@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 import yaml
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import Response
 
 from orqestra.api.state import check_auth, state
 
@@ -230,6 +231,120 @@ def wiki_read(request: Request, path: str, department: str | None = None):
     if jr is not None:
         out["job_role"] = str(jr).strip().lower()
     return out
+
+
+# Strip every markdown link whose target is NOT an external http(s) URL.
+# This keeps external references clickable in the PDF but renders
+# wiki-internal cross-links (`[foo](foo.md)`, `[foo](../bar.md)`) as plain text.
+_INTERNAL_LINK_RE = re.compile(r"\[([^\]]+)\]\((?!https?://)[^)]+\)")
+
+
+def _slugify(text: str) -> str:
+    """Filesystem-safe slug for the PDF filename."""
+    text = re.sub(r"[^\w\s-]", "", text, flags=re.UNICODE).strip().lower()
+    text = re.sub(r"[\s-]+", "-", text)
+    return text or "page"
+
+
+def _render_pdf_html(page: dict[str, Any]) -> str:
+    """Turn a wiki page dict (as returned by ``/wiki/read``) into print-ready HTML."""
+    import markdown as md  # local import so the module stays importable without the dep
+
+    raw = page.get("content") or ""
+    # `wiki_read` has already turned `[[foo.md]]` into `[foo](foo.md)`; strip every
+    # markdown link whose target is not an external http(s) URL so wiki cross-links
+    # show up as plain text in the PDF.
+    raw = _INTERNAL_LINK_RE.sub(r"\1", raw)
+
+    body_html = md.markdown(
+        raw,
+        extensions=["extra", "sane_lists", "tables", "fenced_code"],
+        output_format="html5",
+    )
+
+    title = page.get("title") or page.get("path") or "Wiki"
+    category = page.get("category") or ""
+    updated = page.get("updated") or ""
+    tags = page.get("tags") or []
+    tags_html = "".join(f'<span class="tag">{t}</span>' for t in tags)
+    meta_bits: list[str] = []
+    if category:
+        meta_bits.append(f'<span>{category}</span>')
+    if updated:
+        meta_bits.append(f'<span>Aktualisiert: {updated}</span>')
+    meta_html = " · ".join(meta_bits)
+
+    return f"""<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>{title}</title>
+<style>
+  @page {{ size: A4; margin: 22mm 20mm; }}
+  html, body {{ font-family: "Helvetica", "Arial", sans-serif; color: #1f2328; font-size: 11pt; line-height: 1.55; }}
+  body {{ margin: 0; }}
+  h1.doc-title {{ font-size: 22pt; margin: 0 0 6pt; color: #0f172a; }}
+  .doc-meta {{ color: #64748b; font-size: 9.5pt; margin-bottom: 2pt; }}
+  .doc-tags {{ margin: 6pt 0 18pt; }}
+  .doc-tags .tag {{
+    display: inline-block; font-size: 8.5pt; padding: 1pt 6pt; margin-right: 4pt;
+    border: 1px solid #cbd5e1; border-radius: 999px; color: #475569;
+  }}
+  hr.doc-sep {{ border: none; border-top: 1px solid #e2e8f0; margin: 0 0 18pt; }}
+  h1, h2, h3, h4, h5, h6 {{ color: #0f172a; margin-top: 14pt; margin-bottom: 6pt; line-height: 1.25; }}
+  h1 {{ font-size: 17pt; }} h2 {{ font-size: 14pt; }} h3 {{ font-size: 12pt; }}
+  h4, h5, h6 {{ font-size: 11pt; }}
+  p {{ margin: 0 0 8pt; }}
+  ul, ol {{ margin: 0 0 8pt 18pt; padding: 0; }}
+  li {{ margin-bottom: 3pt; }}
+  a {{ color: #2563eb; text-decoration: none; }}
+  code {{ font-family: "Menlo", "Consolas", monospace; font-size: 9.5pt;
+          background: #f1f5f9; padding: 1pt 4pt; border-radius: 3pt; }}
+  pre {{ background: #f1f5f9; padding: 8pt 10pt; border-radius: 4pt;
+         overflow: auto; font-size: 9.5pt; page-break-inside: avoid; }}
+  pre code {{ background: transparent; padding: 0; }}
+  blockquote {{ margin: 0 0 8pt; padding: 4pt 10pt; border-left: 3px solid #cbd5e1;
+                color: #475569; background: #f8fafc; }}
+  table {{ border-collapse: collapse; width: 100%; margin: 0 0 10pt; font-size: 10pt; }}
+  th, td {{ border: 1px solid #cbd5e1; padding: 4pt 6pt; text-align: left; vertical-align: top; }}
+  th {{ background: #f1f5f9; }}
+  img {{ max-width: 100%; }}
+</style>
+</head>
+<body>
+  <h1 class="doc-title">{title}</h1>
+  {f'<div class="doc-meta">{meta_html}</div>' if meta_html else ''}
+  {f'<div class="doc-tags">{tags_html}</div>' if tags_html else ''}
+  <hr class="doc-sep">
+  <article>{body_html}</article>
+</body>
+</html>
+"""
+
+
+@router.get("/api/wiki/export/pdf")
+def wiki_export_pdf(request: Request, path: str, department: str | None = None):
+    """Render a single wiki page as a downloadable PDF (WeasyPrint)."""
+    check_auth(request)
+    try:
+        from weasyprint import HTML  # local import: heavy dep, only needed here
+    except ImportError as exc:  # pragma: no cover - informative runtime message
+        raise HTTPException(
+            500,
+            "PDF export requires WeasyPrint. Install it with `pip install weasyprint` "
+            "and make sure the native Pango/Cairo libraries are available.",
+        ) from exc
+
+    page = wiki_read(request, path, department)
+    html = _render_pdf_html(page)
+    pdf_bytes = HTML(string=html).write_pdf()
+
+    filename = f"{_slugify(page.get('title') or Path(path).stem)}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.delete("/api/wiki/delete")

@@ -1,0 +1,17 @@
+name: competitive-intel
+label: Competitive Intelligence
+label_de: Wettbewerbsanalyse
+description: >
+  Monitors competitors, analyzes their strategies, products, and market positioning.
+  Maintains structured competitor profiles in the wiki.
+description_de: >
+  Überwacht Wettbewerber, analysiert deren Strategien, Produkte und Marktpositionierung.
+  Pflegt strukturierte Wettbewerber-Profile im Wiki.
+capabilities:
+  - kb_search
+  - kb_read
+  - kb_write
+  - kb_list
+  - kb_related
+  - web_search
+  - fetch_url

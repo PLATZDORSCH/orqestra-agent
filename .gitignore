@@ -1,15 +1,139 @@
-__pycache__/
-*.pyc
-venv/
+# ───────────────────────────────────────────────────────────────────────
+# Orqestra .gitignore
+# ───────────────────────────────────────────────────────────────────────
+# Goal: keep code, templates and example configs in the repo;
+# keep ALL user-generated content (wiki entries, jobs, indexes,
+# secrets, installed departments) out of it.
+
+# ─── Secrets & local config ────────────────────────────────────────────
 .env
+.env.*
+!.env.example
+project.yaml
+config.local.yaml
+secrets/
+
+# Runtime-generated registries (created by the install wizard / Web UI).
+# A clean clone should start without departments and let the user pick
+# templates from `templates/` via the wizard.
+departments.yaml
+pipelines.yaml
+
+# ─── Python ────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
 *.egg-info/
-dist/
+.eggs/
 build/
-.mypy_cache/
+dist/
+sdist/
+wheels/
+pip-wheel-metadata/
+.installed.cfg
+MANIFEST
+
+# Test / type-check / coverage caches
 .pytest_cache/
-.docker/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+nosetests.xml
+
+# Virtualenvs
+venv/
+.venv/
+env/
+.env-venv/
+ENV/
+
+# Jupyter / IPython
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# ─── Node / Web frontend ───────────────────────────────────────────────
+web/node_modules/
+web/dist/
+web/dist-ssr/
+web/.vite/
+web/coverage/
+web/.eslintcache
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── Orqestra runtime data (NEVER commit) ──────────────────────────────
+# Job history, conversations, wiki content, search indexes
+data/
+output/
+custom_code/*
+!custom_code/.gitkeep
+
+# Personal / private knowledge base (not part of public template)
+personal_knowledge/
+
+# Shared knowledge base — only scaffold stays in repo
 knowledge_base/wiki/
 knowledge_base/raw/
 knowledge_base/content/drafts/
 knowledge_base/content/published/
-output/
+
+# Per-department state — installed at runtime, never shipped
+departments/*/knowledge_base/
+departments/*/.fts_index*
+departments/.DS_Store
+
+# FTS5 / SQLite indexes anywhere in the tree
+**/.fts_index.db
+**/.fts_index.db-shm
+**/.fts_index.db-wal
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# ─── Docker / build artefacts ──────────────────────────────────────────
+.docker/
+docker-compose.override.yml
+compose.override.yaml
+
+# ─── Editors & IDEs ────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*.orig
+*~
+.history/
+
+# ─── OS junk ───────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ─── Misc ──────────────────────────────────────────────────────────────
+*.tmp
+*.temp
+*.pid
+*.seed
+*.tgz
+.cache/

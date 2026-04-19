@@ -30,6 +30,7 @@ class ChatToJobRequest(BaseModel):
 
     turns: list[dict[str, Any]]
     mode: str = "deep"
+    draft_message: str | None = None
 
 
 class DeptChatRequest(BaseModel):
@@ -107,3 +108,23 @@ class PipelineUpsertRequest(BaseModel):
 
 class StartPipelineRunRequest(BaseModel):
     variables: dict[str, str] = Field(default_factory=dict)
+
+
+class MissionAPIModel(BaseModel):
+    """One proactive mission template for a department."""
+
+    id: str = Field(..., min_length=1)
+    label: str = ""
+    prompt: str = ""
+
+
+class ProactiveConfigAPIModel(BaseModel):
+    """Persisted under ``departments.yaml`` → ``proactive:``.
+
+    ``enabled`` is opt-in: the user must explicitly turn it on per department.
+    """
+
+    enabled: bool = False
+    schedule: str | None = None
+    strategy: str = "rotate"
+    missions: list[MissionAPIModel] = Field(default_factory=list)

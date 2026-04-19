@@ -1,0 +1,983 @@
+/* ─── Shell ─────────────────────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ─── Top bar ────────────────────────────────────────────────────────────── */
+.topBar {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 52px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  gap: 12px;
+}
+
+.topBarTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.topBarSpacer {
+  flex: 1;
+}
+
+.ingestJobBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 20px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.ingestJobBannerClose {
+  margin-left: auto;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.ingestJobBannerClose:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.searchWrap {
+  flex: 1;
+  max-width: 480px;
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 7px 12px 7px 34px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.searchInput:focus {
+  border-color: var(--border-light);
+}
+.searchInput::placeholder {
+  color: var(--text-dim);
+}
+
+/* Single icon button used in the top bar for Home / Graph toggle */
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.iconBtn:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+.iconBtnActive {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  border-color: var(--border);
+}
+
+/* ─── Body ───────────────────────────────────────────────────────────────── */
+.body {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ─── Tree sidebar ───────────────────────────────────────────────────────── */
+.treeCol {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--bg-surface);
+  overflow-y: auto;
+  min-height: 0;
+  padding-bottom: 10px;
+}
+
+/* Toolbar at the top of the tree: home + collapse/expand all */
+.treeToolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-surface);
+}
+
+.treeToolbarBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.treeToolbarBtn:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.treeSection {
+  padding: 0;
+}
+
+.treeSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+.treeSectionHeader:hover {
+  color: var(--text);
+}
+
+.treeSectionHeaderIcon {
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.treeSectionHeaderIconOpen {
+  transform: rotate(90deg);
+}
+
+.treeSectionLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.treeSectionCount {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-dim);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 6px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.ingestBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  background: transparent;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 4px;
+  color: var(--text-dim);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+}
+.treeSectionHeader:hover .ingestBtn {
+  opacity: 1;
+}
+.ingestBtn:hover {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+
+.treeFolder {
+  padding: 0;
+}
+
+.treeFolderHeader {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 12px 3px 22px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+.treeFolderHeader:hover {
+  color: var(--text);
+}
+
+.treeFolderLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.treeFolderCount {
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.treeItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 3px 14px 3px 38px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background 0.1s;
+  border-radius: 4px;
+}
+.treeItem:hover {
+  background: var(--bg-elevated);
+}
+.treeItemActive {
+  background: var(--accent-bg) !important;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ─── Content area ───────────────────────────────────────────────────────── */
+.contentCol {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 32px;
+}
+
+.emptyState {
+  margin: auto;
+  text-align: center;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 20px;
+}
+.emptyState p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ─── Breadcrumbs ────────────────────────────────────────────────────────── */
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+.breadcrumbItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.breadcrumbBtn {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  font: inherit;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.1s, color 0.1s;
+}
+.breadcrumbBtn:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.breadcrumbCurrent {
+  color: var(--text);
+  font-weight: 500;
+  padding: 2px 4px;
+}
+
+.breadcrumbSep {
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+/* Page header */
+.pageHeader {
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.pageHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.pageHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.exportBtn,
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.exportBtn:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border-color: #3b82f6;
+}
+.exportBtn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.deleteBtn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+.deleteConfirm {
+  padding: 14px 18px;
+  background: var(--bg-elevated);
+  border: 1px solid #ef4444;
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+.deleteConfirm p {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.deleteConfirmActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.deleteConfirmCancel {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.deleteConfirmCancel:hover {
+  background: var(--bg-surface);
+}
+.deleteConfirmDelete {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #ef4444;
+  color: white;
+  font-size: 12px;
+  font-family: var(--font);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.deleteConfirmDelete:hover {
+  background: #dc2626;
+}
+.deleteConfirmDelete:disabled,
+.deleteConfirmCancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.pageDeptBadge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pageTag {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.jobLinkBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.jobLinkBannerLink {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-decoration: none;
+}
+.jobLinkBannerLink:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.jobRoleBadge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+  color: var(--text-muted);
+}
+
+/* Markdown body */
+.pageBody {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+}
+.pageBody p { margin: 8px 0; }
+.pageBody p:first-child { margin-top: 0; }
+.pageBody pre {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 13px;
+  margin: 10px 0;
+}
+.pageBody code {
+  background: var(--bg-elevated);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.pageBody h1, .pageBody h2, .pageBody h3 {
+  margin: 18px 0 8px;
+  font-weight: 600;
+}
+.pageBody h1 { font-size: 20px; }
+.pageBody h2 { font-size: 17px; }
+.pageBody h3 { font-size: 15px; }
+.pageBody ul, .pageBody ol { padding-left: 20px; margin: 6px 0; }
+.pageBody li { margin: 3px 0; }
+.pageBody a { color: var(--accent); text-decoration: none; }
+.pageBody a:hover { text-decoration: underline; }
+.pageBody blockquote {
+  border-left: 2px solid var(--border-light);
+  margin: 10px 0;
+  padding: 6px 14px;
+  color: var(--text-dim);
+}
+.pageBody table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.pageBody th, .pageBody td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+}
+.pageBody th {
+  background: var(--bg-elevated);
+  font-weight: 600;
+}
+
+/* ─── Search results ─────────────────────────────────────────────────────── */
+.searchResults {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.searchResultCard {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition: border-color 0.12s, background 0.12s;
+}
+.searchResultCard:hover {
+  border-color: var(--border-light);
+  background: var(--bg-elevated);
+}
+
+.searchResultTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.searchResultMeta {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.searchResultSnippet {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ─── Graph view ─────────────────────────────────────────────────────────── */
+.graphLabelToggle {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-family: var(--font);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.graphLabelToggle:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.graphContainer {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: var(--bg);
+}
+
+.graphLegend {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  display: flex;
+  gap: 12px;
+  padding: 8px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+  z-index: 10;
+}
+
+.legendDot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.graphTooltip {
+  position: absolute;
+  padding: 6px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 20;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* ─── Loading ────────────────────────────────────────────────────────────── */
+.loadingState {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: auto;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+/* ─── Home / start page ──────────────────────────────────────────────────── */
+.homeWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 780px;
+}
+
+.homeGreeting {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.homeSubtitle {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 4px 0 0;
+}
+
+.homeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.homeCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: var(--font);
+  text-align: left;
+  width: 100%;
+  transition: border-color 0.12s, background 0.12s, transform 0.12s;
+}
+.homeCard:hover {
+  border-color: var(--border-light);
+  background: var(--bg-elevated);
+  transform: translateY(-1px);
+}
+
+.homeCardLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.homeCardCount {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.homeCardUnit {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+/* Recent pages */
+.homeSectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+.recentList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recentRow {
+  display: grid;
+  grid-template-columns: 16px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.1s, border-color 0.1s;
+}
+.recentRow:hover {
+  background: var(--bg-surface);
+  border-color: var(--border);
+}
+
+.recentIcon {
+  display: flex;
+  align-items: center;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.recentRow:hover .recentIcon {
+  color: var(--accent);
+}
+
+.recentTitle {
+  font-weight: 500;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recentDept {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.recentDate {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Auto-Index (fallback overview) ─────────────────────────────────────── */
+.autoIndexWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 860px;
+}
+
+.autoIndexHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+
+.autoIndexTitle {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.autoIndexCount {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
+.autoIndexHint {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: -10px 0 0;
+  line-height: 1.5;
+}
+
+.autoIndexSection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.autoIndexSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 8px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.autoIndexSectionCount {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1px 7px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.autoIndexList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.autoIndexRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+.autoIndexRow:hover {
+  background: var(--bg-elevated);
+}
+
+.autoIndexRowIcon {
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.autoIndexRow:hover .autoIndexRowIcon {
+  color: var(--accent);
+}
+
+.autoIndexRowTitle {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.autoIndexRowCat {
+  font-size: 10px;
+  color: var(--text-dim);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  flex-shrink: 0;
+}
+
+/* ─── Loading animation ──────────────────────────────────────────────────── */
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

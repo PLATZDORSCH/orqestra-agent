@@ -1,19 +1,43 @@
 llm:
-  base_url: "https://tokenstudio.platzdorsch.io/v1"
-  api_key: "${OPENAI_API_KEY}"
-  model: "qwen3.5-35b-a3b-fp8"
+  base_url: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+  api_key: ${OPENAI_API_KEY}
+  model: ${OPENAI_MODEL:-gpt-4o-mini}
 
 engine:
   max_rounds: 25
-  language: "German"
+  language: en              # "en" | "de" — picks persona.<lang>.md when present
 
 knowledge_base:
-  path: "./knowledge_base"
+  path: ./knowledge_base
 
 skills:
-  path: "./skills"
+  path: ./skills
 
 memory:
-  path: "wiki/memory.md"
+  path: wiki/memory.md
   max_chars: 6000
   enabled: true
+
+api:
+  enabled: true
+  host: 0.0.0.0
+  port: 4200
+  # Set ORQESTRA_API_TOKEN in .env if you want bearer-token auth on /api/*
+  # auth_token: ${ORQESTRA_API_TOKEN}
+
+web:
+  enabled: true
+
+telegram:
+  enabled: false             # set to true and configure TELEGRAM_BOT_TOKEN in .env
+  token: ${TELEGRAM_BOT_TOKEN}
+  require_whitelist: true    # NEVER disable on a public deployment
+  allowed_user_ids: []       # add your Telegram user IDs here (find via @userinfobot)
+  allowed_chat_ids: []       # optional: group / supergroup IDs
+
+# Legacy global proactive fallback. Prefer per-department `proactive` blocks
+# in departments.yaml (see docs: Proactive missions).
+proactive:
+  enabled: false
+  schedule: "0 6 * * *"
+  iterations: 6

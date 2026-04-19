@@ -1,0 +1,39 @@
+name: topic-deep-dive
+label: Topic Deep Dive
+label_de: Themen-Deep-Dive
+description: "Research memo + polished long-form: white-paper light on a topic."
+description_de: "Research-Memo + ausformuliertes Long-Form: White-Paper-Light zu einem Thema."
+variable_descriptions:
+  topic: "Thema, z.B. 'Edge Computing in der Industrie 4.0'"
+required_departments:
+  - market-research
+  - content-creation
+steps:
+  - department: market-research
+    task_template:
+      en: |
+        Produce a structured research memo on: {topic}
+
+        Cover definitions, key players, trends, data points, risks, and open questions.
+        Cite or name sources where possible.
+      de: |
+        Erstelle ein strukturiertes Research-Memo zum Thema: {topic}
+
+        Behandle Definitionen, Akteure, Trends, Kennzahlen, Risiken und offene Fragen.
+        Nenne Quellen wo möglich.
+    result_key: memo
+  - department: content-creation
+    task_template:
+      en: |
+        Turn the following research memo into a polished long-form piece (white-paper light) on {topic}:
+
+        {memo}
+
+        Use executive summary, clear sections, figures/tables as text if needed, and a short conclusion.
+      de: |
+        Verwandle folgendes Research-Memo in ein ausformuliertes Long-Form-Stück (White-Paper-Light) zu {topic}:
+
+        {memo}
+
+        Nutze Executive Summary, klare Abschnitte, Tabellen als Text wo sinnvoll, und ein kurzes Fazit.
+    result_key: deep_dive

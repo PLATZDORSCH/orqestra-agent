@@ -1,0 +1,17 @@
+name: content-creation
+label: Content Creation
+label_de: Content-Erstellung
+description: >
+  Creates blog posts, social media content, newsletters, and marketing copy
+  based on wiki knowledge and current trends.
+description_de: >
+  Erstellt Blogbeiträge, Social-Media-Content, Newsletter und Marketing-Texte
+  basierend auf Wiki-Wissen und aktuellen Trends.
+capabilities:
+  - kb_search
+  - kb_read
+  - kb_write
+  - kb_list
+  - kb_related
+  - web_search
+  - fetch_url

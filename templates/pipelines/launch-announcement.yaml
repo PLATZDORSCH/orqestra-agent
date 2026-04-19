@@ -1,0 +1,46 @@
+name: launch-announcement
+label: Launch Announcement
+label_de: Launch-Ankündigung
+description: "Market context → launch copy: blog post plus social snippets."
+description_de: "Marktkontext → Launch-Texte: Blog-Post plus Social-Snippets."
+variable_descriptions:
+  product: "Produkt oder Feature, z.B. 'Orqestra Pipeline Auto-Install'"
+  usp: "Alleinstellungsmerkmal, z.B. 'Pipelines beim Erststart automatisch aus Templates'"
+required_departments:
+  - market-research
+  - content-creation
+steps:
+  - department: market-research
+    task_template:
+      en: |
+        Brief market context for launching: {product}
+
+        USP: {usp}
+
+        Summarize audience, timing hooks, competitor noise, and 3 angles for the story.
+      de: |
+        Liefere Marktkontext für den Launch von: {product}
+
+        USP: {usp}
+
+        Fasse Zielgruppe, Timing-Hooks, Wettbewerbsgeräusch und 3 Story-Winkel zusammen.
+    result_key: launch_context
+  - department: content-creation
+    task_template:
+      en: |
+        Write a launch announcement for {product} with USP: {usp}
+
+        Context:
+        {launch_context}
+
+        Deliver: (1) blog post with headline, subhead, body, CTA; (2) 3 social post variants
+        (LinkedIn/X) with hashtags suggestions; (3) one email subject + preview line.
+      de: |
+        Schreibe eine Launch-Ankündigung für {product} mit USP: {usp}
+
+        Kontext:
+        {launch_context}
+
+        Liefere: (1) Blog-Post mit Headline, Subhead, Text, CTA; (2) 3 Social-Varianten
+        (LinkedIn/X) mit Hashtag-Vorschlägen; (3) eine E-Mail-Betreffzeile + Preview-Text.
+    result_key: launch_assets

@@ -1,0 +1,67 @@
+name: full-audit
+label: Full Audit
+label_de: Komplett-Audit
+description: "Competitive snapshot → Market analysis → Executive brief: strategic business audit."
+description_de: "Wettbewerbssnapshot → Marktanalyse → Executive-Brief: strategisches Business-Audit."
+variable_descriptions:
+  business: "Unternehmen, Produkt oder Marktsegment, z.B. 'vimind GmbH, B2B-Wireless-Lösungen'"
+required_departments:
+  - competitive-intel
+  - market-research
+  - content-creation
+steps:
+  - department: competitive-intel
+    task_template:
+      en: |
+        Produce a competitive snapshot for: {business}
+
+        Identify main competitors, positioning, differentiation, strengths/weaknesses,
+        and strategic implications. Deliver a concise structured overview.
+      de: |
+        Erstelle einen Wettbewerbssnapshot für: {business}
+
+        Identifiziere die wichtigsten Wettbewerber, Positionierung, Differenzierung,
+        Stärken/Schwächen und strategische Implikationen. Liefere eine knappe strukturierte Übersicht.
+    result_key: competitive_snapshot
+  - department: market-research
+    task_template:
+      en: |
+        Based on the following competitive snapshot, research the market and industry context for {business}:
+
+        {competitive_snapshot}
+
+        Identify market trends, audience insights, growth opportunities, and risks
+        that align with the competitive picture.
+      de: |
+        Basierend auf folgendem Wettbewerbssnapshot, recherchiere Markt und Branchenkontext für {business}:
+
+        {competitive_snapshot}
+
+        Identifiziere Markttrends, Zielgruppen-Insights, Wachstumschancen und Risiken
+        im Einklang mit dem Wettbewerbsbild.
+    result_key: market_analysis
+  - department: content-creation
+    task_template:
+      en: |
+        Write an executive brief (max. 2 pages) synthesizing the audit for {business}.
+
+        Competitive snapshot:
+        {competitive_snapshot}
+
+        Market analysis:
+        {market_analysis}
+
+        Structure: key findings, opportunities, risks, recommended positioning,
+        and 3–5 concrete next steps.
+      de: |
+        Erstelle ein Executive-Briefing (max. 2 Seiten), das das Audit für {business} zusammenfasst.
+
+        Wettbewerbssnapshot:
+        {competitive_snapshot}
+
+        Marktanalyse:
+        {market_analysis}
+
+        Struktur: Kernaussagen, Chancen, Risiken, empfohlene Positionierung,
+        3–5 konkrete nächste Schritte.
+    result_key: audit_report

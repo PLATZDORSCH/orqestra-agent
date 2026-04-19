@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from orqestra import __version__
 from orqestra.core.bootstrap import load_config
 
 from orqestra.api.chat import router as chat_router
@@ -18,6 +19,7 @@ from orqestra.api.project import router as project_router
 from orqestra.api.settings import router as settings_router
 from orqestra.api.sessions import router as sessions_router
 from orqestra.api.state import mount_web_ui, state
+from orqestra.api.version import router as version_router
 from orqestra.api.wiki import router as wiki_router
 
 log = logging.getLogger(__name__)
@@ -37,7 +39,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Orqestra API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Orqestra API", version=__version__, lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -49,6 +51,7 @@ app.add_middleware(
 
 # departments_router before chat_router: /api/departments/builder/chat must not be
 # captured by /api/departments/{name}/chat (name="builder").
+app.include_router(version_router)
 app.include_router(sessions_router)
 app.include_router(wiki_router)
 app.include_router(departments_router)

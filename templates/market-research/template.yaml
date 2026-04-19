@@ -1,0 +1,17 @@
+name: market-research
+label: Market Research
+label_de: Marktforschung
+description: >
+  Researches market trends, target audiences, and industry developments.
+  Generates wiki pages with structured market intelligence.
+description_de: >
+  Recherchiert Markttrends, Zielgruppen und Branchenentwicklungen.
+  Erzeugt Wiki-Seiten mit strukturierter Marktintelligenz.
+capabilities:
+  - kb_search
+  - kb_read
+  - kb_write
+  - kb_list
+  - kb_related
+  - web_search
+  - fetch_url

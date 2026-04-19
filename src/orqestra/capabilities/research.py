@@ -25,6 +25,7 @@ from orqestra.capabilities.browser_core import (
     playwright_available,
 )
 from orqestra.core.capabilities import Capability
+from orqestra.core.research_budget import normalize_web_search_args
 
 _HTTP_TIMEOUT = 30
 _MAX_CONTENT_CHARS = 15_000
@@ -200,6 +201,8 @@ def _search_brave(query: str, count: int = 5) -> list[dict]:
             "url": item.get("url", ""),
             "snippet": item.get("description", ""),
         })
+    if not results:
+        return [{"meta": "no_results", "query": query}]
     return results
 
 
@@ -224,12 +227,15 @@ def _search_searxng(query: str, count: int = 5) -> list[dict]:
             "url": item.get("url", ""),
             "snippet": item.get("content", ""),
         })
+    if not results:
+        return [{"meta": "no_results", "query": query}]
     return results
 
 
 def _handle_web_search(args: dict) -> str:
-    query = args["query"]
-    count = args.get("count", 5)
+    query, count = normalize_web_search_args(args)
+    if not query:
+        return json.dumps({"error": "empty_query"}, ensure_ascii=False)
 
     if os.getenv("BRAVE_API_KEY"):
         results = _search_brave(query, count)
@@ -250,12 +256,25 @@ def _handle_web_search(args: dict) -> str:
 
 web_search = Capability(
     name="web_search",
-    description="Search the internet for a query. Returns title, URL, and text snippet for each result.",
+    description=(
+        "Search the internet for a query. **Costly** — prefer `fetch_url` when you already know "
+        "the domain, and `kb_search`/`kb_read` before searching externally. Avoid more than 3 "
+        "quoted phrases per query (Brave returns 0 for over-specified queries). Do not retry the "
+        "same topic with only a changed year or minor word swap — if results are empty twice, move on."
+    ),
     parameters={
         "type": "object",
         "properties": {
-            "query": {"type": "string", "description": "Search term(s)"},
-            "count": {"type": "integer", "description": "Number of results (default: 5)"},
+            "query": {
+                "type": "string",
+                "description": "Search term(s). Keep under ~160 chars; combine no more than 3 quoted phrases.",
+            },
+            "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 10,
+                "description": "Number of results (1-10, default 5)",
+            },
         },
         "required": ["query"],
     },

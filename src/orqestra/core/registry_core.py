@@ -15,6 +15,7 @@ from orqestra.core.engine import StrategyEngine
 from orqestra.core.job_store import JobStore
 from orqestra.core.jobs import DepartmentJob
 from orqestra.core.proactive import _PROACTIVE_ROLES
+from orqestra.core.proactive_models import parse_proactive_from_dict
 from orqestra.core.registry_constants import DEFAULT_DEPT_COLORS
 
 log = logging.getLogger(__name__)
@@ -138,6 +139,7 @@ class DepartmentRegistryCore:
             dept_icon = raw_icon.strip()
         else:
             dept_icon = None
+        proactive_cfg = parse_proactive_from_dict(dept_cfg.get("proactive"))
         persona_path = root / dept_cfg.get("persona", f"departments/{name}/persona.md")
         kb_path = root / dept_cfg.get("knowledge_base", f"departments/{name}/knowledge_base")
         skills_path = root / dept_cfg.get("skills", f"departments/{name}/skills")
@@ -188,6 +190,7 @@ class DepartmentRegistryCore:
             skills_path,
             color=dept_color,
             icon=dept_icon,
+            proactive=proactive_cfg,
         )
         log.info(
             "Department '%s' loaded — %d capabilities, %d skills",

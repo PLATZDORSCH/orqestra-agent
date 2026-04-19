@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 _MAX_COMPLETED_JOBS = 50
-_FINISHED_JOB_MAX_AGE = 6 * 3600  # seconds — hide finished jobs older than this
 
 # Default accent per department when `color` is omitted in departments.yaml (UI / topology).
 DEFAULT_DEPT_COLORS = (
@@ -36,7 +35,6 @@ __all__ = [
     "_DELEGATION_END",
     "_DEPT_TABLE_BEGIN",
     "_DEPT_TABLE_END",
-    "_FINISHED_JOB_MAX_AGE",
     "_MAX_COMPLETED_JOBS",
     "DEFAULT_DEPT_COLORS",
     "MAIN_WIKI_JOB_DEPARTMENT",

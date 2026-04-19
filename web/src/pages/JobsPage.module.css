@@ -1,0 +1,1214 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 24px;
+  height: 52px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.header h2 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.proactiveWrap {
+  position: relative;
+}
+
+.proactiveBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.proactiveBtn:hover:not(:disabled) {
+  background: var(--border);
+  border-color: var(--text-dim);
+}
+.proactiveBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.proactiveChevronOpen {
+  transform: rotate(180deg);
+}
+
+.proactiveMenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 220px;
+  max-height: min(420px, 70vh);
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+  padding: 4px 0;
+}
+
+.proactiveMenuError {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.proactiveMenuItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+}
+.proactiveMenuItem:hover:not(:disabled) {
+  background: var(--bg-elevated);
+}
+.proactiveMenuItem:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.proactiveMenuLabel {
+  font-weight: 600;
+}
+
+.proactiveMenuName {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: ui-monospace, monospace;
+}
+
+.proactiveDeptBlock {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.proactiveDeptBlock:last-child {
+  border-bottom: none;
+}
+.proactiveDeptRow {
+  padding: 4px 12px 6px;
+  font-size: 11px;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jobTileMission {
+  font-size: 10px;
+  color: var(--accent, #6366f1);
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.refreshBtn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  transition: all 0.15s;
+}
+.refreshBtn:hover {
+  color: var(--text);
+  background: var(--border);
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.contentDetail {
+  padding: 20px 24px 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.empty {
+  color: var(--text-dim);
+  margin: auto;
+}
+
+.loadMoreSentinel {
+  width: 100%;
+  min-height: 32px;
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loadMoreSpinner {
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Kachel-Raster ───────────────────────────────────────────────────── */
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-content: start;
+  align-items: stretch;
+}
+
+@media (max-width: 1200px) {
+  .tileGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .tileGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.jobTileWrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.jobTileToolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.jobTile {
+  --dept-accent: var(--border);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-height: 120px;
+  height: 100%;
+  padding: 12px 14px 12px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  border-left: 4px solid var(--dept-accent);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
+  font-family: var(--font);
+  color: inherit;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  width: 100%;
+  margin: 0;
+}
+
+.jobTile:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-light);
+}
+
+.jobTile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.jobTileAccentBg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--dept-accent) 9%, transparent);
+  pointer-events: none;
+}
+
+.jobTileInner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.jobTileTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding-right: 40px;
+}
+
+.jobTileStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.jobTileStatus[data-status="running"] { color: var(--yellow); }
+.jobTileStatus[data-status="done"] { color: var(--green); }
+.jobTileStatus[data-status="error"] { color: var(--red); }
+.jobTileStatus[data-status="cancelled"] { color: var(--text-dim); }
+.jobTileStatus[data-status="pending"] { color: var(--text-dim); }
+
+.jobTileActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.jobTileDept {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.jobTileId {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.jobTileTask {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.jobTileMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.jobTileTime {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.tileModeIcon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.cancelBtn {
+  background: none;
+  border: none;
+  color: var(--red);
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.cancelBtn:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.deleteBtn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: opacity 0.12s, color 0.12s;
+  cursor: pointer;
+}
+.deleteBtn:hover {
+  color: var(--red);
+  opacity: 1;
+}
+
+.retryBtn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0.7;
+  transition: opacity 0.12s, color 0.12s;
+  cursor: pointer;
+}
+.retryBtn:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* ── Job-Detail (Department-Stil) ─────────────────────────────────────── */
+.jobDetailPage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.jobDetailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  min-height: 52px;
+  padding: 0 16px 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  gap: 12px;
+}
+
+.jobDetailHeaderBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s, color 0.12s;
+}
+
+.jobDetailHeaderBack:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.jobDetailHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.topBarJobStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.topBarJobId {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.topBarCancel {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--red);
+  background: transparent;
+  color: var(--red);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.topBarCancel:hover {
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.jobDetailView {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.jobDetailPane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.jobDetailWithFiles {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  grid-template-rows: minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.jobFilesCol {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.jobFilesHeading {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  padding: 4px 6px 8px;
+}
+
+.jobFilesSubheading {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 8px 6px 4px;
+}
+
+.jobFileLinkDeliverable {
+  font-weight: 600;
+  border-left: 2px solid var(--accent);
+  padding-left: 7px;
+}
+
+.jobFileLink {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px;
+  font-size: 12px;
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-align: left;
+  font-family: var(--font);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.jobFileLink:hover {
+  background: var(--bg-elevated);
+  color: var(--accent);
+}
+.jobFileLinkActive {
+  background: var(--accent-bg) !important;
+  color: var(--accent) !important;
+}
+.jobFileLinkBack {
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  margin-bottom: 4px;
+  padding-bottom: 8px;
+  font-size: 11px;
+}
+.jobFileLinkBack:hover {
+  color: var(--text);
+  background: none !important;
+}
+
+.filePreview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.filePreviewTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.jobDetailScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.detailLoading {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+  color: var(--text-dim);
+}
+
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detailStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.iterBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-dim);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.detailTime {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  margin-left: auto;
+}
+
+.detailRunning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.detailRunningDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--yellow);
+  animation: pulse 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.detailError {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--red);
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.jobConversation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.jobConvUser {
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.jobConvAssistant {
+  padding: 10px 12px;
+  background: var(--bg-surface);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+}
+
+.jobConvLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.jobConvBody {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.jobConvBody p {
+  margin: 4px 0;
+}
+.jobConvBody p:first-child {
+  margin-top: 0;
+}
+
+.detailResultBody {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+}
+.detailResultBody pre {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 13px;
+  margin: 8px 0;
+}
+.detailResultBody code {
+  background: var(--bg-elevated);
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+.detailResultBody p {
+  margin: 6px 0;
+}
+.detailResultBody h1,
+.detailResultBody h2,
+.detailResultBody h3 {
+  margin: 14px 0 6px;
+  font-weight: 600;
+}
+.detailResultBody ul,
+.detailResultBody ol {
+  padding-left: 20px;
+  margin: 6px 0;
+}
+.detailResultBody li {
+  margin: 3px 0;
+}
+
+.dimText {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.jobEvents {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.jobEventPhaseBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.jobEventPhaseHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.jobEventRoleBadge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.jobEventRole_RESEARCHER {
+  background: rgba(22, 163, 74, 0.15);
+  color: #4ade80;
+}
+
+.jobEventRole_CRITIC {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.jobEventRole_VALIDATOR {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.jobEventRole_WRITER {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+}
+
+.jobEventRole_ANALYST {
+  background: rgba(236, 72, 153, 0.15);
+  color: #f472b6;
+}
+
+.jobEventThinkingRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.jobEventThinkingIcon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.jobEventThinkingBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.jobEventThinkingLabel {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 11px;
+}
+
+.jobEventThinkingPreview {
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.jobEventRow {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.jobEventPath {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  opacity: 0.9;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jobEventDot {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.jobEventName {
+  color: var(--text);
+  font-size: 11px;
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.jobEventPreview {
+  color: var(--text-dim);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.replySection {
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: 12px 14px 14px;
+  background: var(--bg-surface);
+}
+
+.replyInputRow {
+  display: flex;
+  gap: 6px;
+}
+
+.replyInput {
+  flex: 1;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.replyInput:focus {
+  border-color: var(--border-light);
+}
+.replyInput::placeholder {
+  color: var(--text-dim);
+}
+
+.sendBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: var(--cta);
+  color: var(--cta-text);
+  border: 1px solid var(--cta-border);
+  border-radius: var(--radius);
+  transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.sendBtn:hover:not(:disabled) {
+  background: var(--cta-hover);
+  border-color: rgba(74, 222, 128, 0.6);
+}
+.sendBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.retryRow {
+  margin-bottom: 10px;
+}
+
+.retryDetailBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--accent);
+  padding: 7px 14px;
+  font-size: 13px;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.retryDetailBtn:hover {
+  background: rgba(74, 222, 128, 0.07);
+  border-color: var(--accent);
+}
+
+.status_running {
+  color: var(--yellow);
+}
+.status_pending {
+  color: var(--text-dim);
+}
+.status_done {
+  color: var(--green);
+}
+.status_error {
+  color: var(--red);
+}
+.status_cancelled {
+  color: var(--text-dim);
+}
+
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeInOverlay 0.12s ease;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.confirmBox {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  padding: 24px;
+  max-width: 380px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: scaleInBox 0.14s ease;
+}
+
+@keyframes scaleInBox {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.confirmTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.confirmBody {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.confirmBtnCancel {
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.confirmBtnCancel:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.confirmBtnDelete {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.1);
+  color: var(--red);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.confirmBtnDelete:hover {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.65);
+}
+
+.jobDeleteWikiSection {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.jobDeleteWikiTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+
+.jobDeleteWikiList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.jobDeleteWikiItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  transition: background 0.1s;
+}
+
+.jobDeleteWikiItem:hover {
+  background: var(--bg);
+}
+
+.jobDeleteWikiItem input[type='checkbox'] {
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--red);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.jobDeleteWikiLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.jobDeleteWikiRole {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.jobDeleteWikiRoleDeliverable {
+  color: var(--accent);
+}
+
+.jobDeleteWikiLabel > span:last-child {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}

@@ -1,0 +1,267 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 100vh;
+  min-width: 0;
+  background: var(--bg);
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.topBarTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.topBarHint {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.flowWrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.errorState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--text-dim);
+  font-size: 14px;
+  padding: 24px;
+}
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex: 1;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Orchestrator node */
+.orchNode {
+  width: 168px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+.orchBanner {
+  height: 36px;
+  background: linear-gradient(135deg, rgba(144, 144, 151, 0.25), rgba(144, 144, 151, 0.06));
+}
+
+.orchBody {
+  padding: 12px 14px 14px;
+  text-align: center;
+}
+
+.orchLabel {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.orchSub {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+.orchPulse {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 6px;
+  vertical-align: middle;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* Department node */
+.deptNode {
+  width: 200px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.deptNode:hover {
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
+}
+
+.deptBanner {
+  height: 40px;
+  position: relative;
+}
+
+.deptBannerSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.deptBody {
+  padding: 10px 12px 12px;
+}
+
+.deptHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.deptLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.deptIconWrap {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-dim);
+}
+
+.deptMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.deptBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+
+.deptBadgeActive {
+  border-color: rgba(74, 222, 128, 0.35);
+  color: var(--green);
+}
+
+.deptHint {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* ─── React Flow UI overrides (dark mode) ───────────────────────────────── */
+
+/* Controls panel (zoom in/out/fit) */
+.flowWrap :global(.react-flow__controls) {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.flowWrap :global(.react-flow__controls-button) {
+  background: var(--bg-surface);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  fill: var(--text-dim);
+  width: 32px;
+  height: 32px;
+  transition: background 0.12s, color 0.12s;
+}
+
+.flowWrap :global(.react-flow__controls-button:last-child) {
+  border-bottom: none;
+}
+
+.flowWrap :global(.react-flow__controls-button:hover) {
+  background: var(--bg-elevated);
+  color: var(--text);
+  fill: var(--text);
+}
+
+.flowWrap :global(.react-flow__controls-button svg) {
+  fill: inherit;
+  max-width: 14px;
+  max-height: 14px;
+}
+
+/* MiniMap */
+.flowWrap :global(.react-flow__minimap) {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.flowWrap :global(.react-flow__minimap-svg) {
+  background: var(--bg-surface);
+}
+
+/* Panel background (attribution etc.) */
+.flowWrap :global(.react-flow__panel) {
+  margin: 12px;
+}

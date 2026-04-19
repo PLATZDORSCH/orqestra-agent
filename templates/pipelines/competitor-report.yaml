@@ -1,0 +1,42 @@
+name: competitor-report
+label: Competitor Report
+label_de: Wettbewerbsbericht
+description: "Competitive analysis → polished report: research competitors and create a structured report."
+description_de: "Wettbewerbsanalyse → aufbereiteter Bericht: Wettbewerber recherchieren und strukturiert aufbereiten."
+variable_descriptions:
+  topic: "Markt oder Produktkategorie, z.B. 'CRM-Software für KMU' oder 'E-Mail Marketing Tools'"
+required_departments:
+  - competitive-intel
+  - content-creation
+steps:
+  - department: competitive-intel
+    task_template:
+      en: |
+        Run a detailed competitive analysis on: {topic}
+
+        Analyze the main competitors: strengths, weaknesses, market positioning,
+        pricing, target segments, and differentiators. Produce SWOT analyses for the top competitors.
+      de: |
+        Führe eine detaillierte Wettbewerbsanalyse durch zum Thema: {topic}
+
+        Analysiere die wichtigsten Wettbewerber: Stärken, Schwächen, Marktpositionierung,
+        Pricing, Zielgruppen und Differenzierungsmerkmale.
+        Erstelle SWOT-Analysen für die Top-Wettbewerber.
+    result_key: analysis
+  - department: content-creation
+    task_template:
+      en: |
+        Create a professional competitive report based on the following analysis:
+
+        {analysis}
+
+        The report should be clearly structured with an executive summary, individual competitor
+        profiles, a comparison table, and strategic recommendations.
+      de: |
+        Erstelle einen professionellen Wettbewerbsbericht basierend auf folgender Analyse:
+
+        {analysis}
+
+        Der Bericht soll klar strukturiert sein mit Executive Summary, Einzelprofilen
+        der Wettbewerber, Vergleichstabelle und strategischen Handlungsempfehlungen.
+    result_key: report

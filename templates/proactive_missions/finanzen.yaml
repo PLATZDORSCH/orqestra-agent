@@ -1,0 +1,20 @@
+# Standardmäßig deaktiviert — im Department-Tab "Proaktive Missionen" einschalten.
+enabled: false
+schedule: "0 6 1 * *"
+strategy: rotate
+missions:
+  - id: cost-anomaly-scan
+    label: Kosten-Auffälligkeiten
+    prompt: |
+      Nutze verfügbare Datenquellen (`read_data`) und prüfe die letzten 30 Tage auf Auffälligkeiten:
+      Ausreißer, ungewöhnliche Buchungen oder Abweichungen von erwarteten Mustern.
+  - id: benchmarks-update
+    label: Branchen-Benchmarks
+    prompt: |
+      Recherchiere aktuelle Kennzahlen-Benchmarks (Margen, Ratios, KPIs) für vergleichbare Unternehmen
+      oder unser Segment. Kurz gegenüberstellen mit dem, was in unserem Wiki steht.
+  - id: fx-and-rates-watch
+    label: Wechselkurs & Zinsen
+    prompt: |
+      Fasse relevante Wechselkurs- und Zinsbewegungen der letzten Woche zusammen, die unser Geschäft
+      oder unsere Kostenstruktur betreffen könnten.

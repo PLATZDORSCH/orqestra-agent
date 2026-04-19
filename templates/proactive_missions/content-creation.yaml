@@ -1,0 +1,20 @@
+# Standardmäßig deaktiviert — im Department-Tab "Proaktive Missionen" einschalten.
+enabled: false
+schedule: "0 6 * * *"
+strategy: rotate
+missions:
+  - id: topic-radar
+    label: Content-Hooks
+    prompt: |
+      Finde 3–5 aktuelle Themen oder News aus der Branche, die sich als Blog-Artikel, LinkedIn-Post
+      oder Newsletter eignen. Kurz begründen, warum relevant für unsere Zielgruppe.
+  - id: evergreen-refresh
+    label: Evergreen-Refresh
+    prompt: |
+      Identifiziere eine ältere Wiki-Seite oder einen Content, der inhaltlich oder statistisch veraltet ist.
+      Skizziere, was aktualisiert werden sollte (ohne sofort zu schreiben).
+  - id: format-experiments
+    label: Format-Ideen
+    prompt: |
+      Schlage für ein bestehendes Wiki-Thema alternative Formate vor (z. B. Vergleichstabelle, Checkliste,
+      Case Study, How-to) und kurz, warum das Format passt.

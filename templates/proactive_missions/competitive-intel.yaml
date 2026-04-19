@@ -1,0 +1,26 @@
+# Standardmäßig deaktiviert — im Department-Tab "Proaktive Missionen" einschalten.
+enabled: false
+schedule: "0 6 * * 1"
+strategy: rotate
+missions:
+  - id: competitor-news
+    label: Wettbewerber-News
+    prompt: |
+      Scanne aktuelle News, Pressemitteilungen und Social-Media-Posts (LinkedIn, X) der in
+      `wiki/akteure/` dokumentierten Top-Wettbewerber. Erfasse der letzten 7 Tage: Produktankündigungen,
+      Personalwechsel, Pricing- oder Bundling-Änderungen, Partnerschaften. Keine Spekulation — nur belegbare Fakten.
+  - id: positioning-shift
+    label: Positionierungswechsel
+    prompt: |
+      Vergleiche die aktuellen Website-Texte, Claims und Kernbotschaften der Top-3-Wettbewerber mit dem letzten
+      dokumentierten Stand in unserem Wiki. Welche Botschaften oder Value Props sind neu oder geändert?
+  - id: new-entrants
+    label: Neue Marktteilnehmer
+    prompt: |
+      Identifiziere neue Anbieter, Startups oder Akteure, die in unser Wettbewerbssegment eintreten.
+      Bewerte grob Bedrohungspotenzial und mögliche Differenzierung zu uns.
+  - id: pricing-watch
+    label: Pricing-Beobachtung
+    prompt: |
+      Recherchiere öffentlich sichtbare Preislisten, Tarife oder Angebotsseiten relevanter Wettbewerber.
+      Notiere Änderungen gegenüber dem, was im Wiki oder in älteren Notizen steht.

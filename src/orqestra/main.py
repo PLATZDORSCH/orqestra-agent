@@ -234,7 +234,7 @@ def _start_api_if_enabled(
         return None
 
     try:
-        from gateway_api import run_api  # noqa: WPS433
+        from orqestra.gateway_api import run_api
     except ImportError:
         log.warning("fastapi/uvicorn not installed \u2014 API gateway disabled.")
         return None
@@ -290,7 +290,7 @@ def _start_telegram_if_enabled(
         return None
 
     try:
-        from gateway_telegram import run_gateway  # noqa: WPS433
+        from orqestra.gateway_telegram import run_gateway
     except ImportError:
         log.warning("python-telegram-bot not installed \u2014 Telegram gateway disabled.")
         return None

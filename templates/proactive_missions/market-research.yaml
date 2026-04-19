@@ -1,0 +1,25 @@
+# Standardmäßig deaktiviert — im Department-Tab "Proaktive Missionen" einschalten.
+enabled: false
+schedule: "0 6 * * 1"
+strategy: rotate
+missions:
+  - id: industry-trends
+    label: Branchentrends
+    prompt: |
+      Fasse die wichtigsten Branchentrends und Markttrends aus Studien, Analystenberichten und Fachmedien
+      der letzten Woche zusammen, die relevant für unser Segment sind.
+  - id: tam-update
+    label: Marktgröße & Wachstum
+    prompt: |
+      Suche aktuelle Schätzungen zu Marktgröße (TAM/SAM), Wachstumsraten und Segmentierung für unseren
+      Zielmarkt. Vergleiche mit älteren Zahlen im Wiki.
+  - id: audience-signals
+    label: Zielgruppen-Signale
+    prompt: |
+      Wo diskutiert unsere Zielgruppe aktuell (Foren, LinkedIn, Reddit, Fachmagazine)? Welche Themen,
+      Pain Points und Fragen tauchen wiederholt auf?
+  - id: regulation-watch
+    label: Regulierung & Standards
+    prompt: |
+      Prüfe neue Gesetze, EU-Richtlinien, Branchenstandards oder Zertifizierungen, die unseren Markt
+      betreffen könnten.

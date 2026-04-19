@@ -27,6 +27,7 @@ from openai import OpenAI
 
 from orqestra._paths import REPO_ROOT as _ROOT
 from orqestra.core.capabilities import CapabilityManager
+from orqestra.core.research_budget import ResearchBudget, web_search_result_counts_toward_budget
 from orqestra.core.tokens import estimate_messages, estimate_text, estimate_tool_schemas
 
 log = logging.getLogger(__name__)
@@ -140,6 +141,7 @@ class StrategyEngine:
         on_tool_call: Callable[..., None] | None = None,
         on_thinking: Callable[[str, str], None] | None = None,
         job_context: dict[str, Any] | None = None,
+        research_budget: ResearchBudget | None = None,
     ) -> str:
         """Answer a question, potentially using multiple tool rounds.
 
@@ -150,6 +152,8 @@ class StrategyEngine:
 
         *job_context*: optional dict with ``job_id`` for background jobs; ``kb_write``
         calls get ``metadata.job_id`` and default ``metadata.job_role=supporting``.
+
+        *research_budget*: optional per-job limiter for ``web_search`` (background jobs).
         """
         _thinking = on_thinking or self._on_thinking
         _tool_call = on_tool_call or self._on_tool_call
@@ -208,7 +212,21 @@ class StrategyEngine:
                 if _thinking:
                     _thinking(f"Tool: {fn_name}", args_preview)
 
-                result = self.capabilities.run(fn_name, fn_args)
+                if research_budget and fn_name == "web_search":
+                    kind, payload = research_budget.consume(fn_name, fn_args)
+                    if kind == "cache":
+                        assert payload is not None
+                        result = payload
+                    elif kind == "exhausted":
+                        assert payload is not None
+                        result = payload
+                    else:
+                        result = self.capabilities.run(fn_name, fn_args)
+                        if web_search_result_counts_toward_budget(result):
+                            research_budget.record_successful_search()
+                        research_budget.store(fn_name, fn_args, result)
+                else:
+                    result = self.capabilities.run(fn_name, fn_args)
                 log.debug("\u2190 %s: %s chars", fn_name, len(result))
 
                 messages.append({

@@ -15,9 +15,16 @@ from orqestra.core.deep_work import (
 )
 from orqestra.core.department import Department
 from orqestra.core.jobs import DepartmentJob, JobEvent
-from orqestra.core.proactive import _PROACTIVE_CONTEXT, _PROACTIVE_PROMPT, _PROACTIVE_ROLES
+from orqestra.core.research_budget import ResearchBudget
+from orqestra.core.proactive import (
+    _PROACTIVE_ROLES,
+    format_proactive_context,
+    pick_missions_for_run,
+    proactive_task_text,
+    resolve_mission_for_job,
+)
+from orqestra.core.proactive_models import Mission
 from orqestra.core.registry_constants import (
-    _FINISHED_JOB_MAX_AGE,
     _MAX_COMPLETED_JOBS,
     MAIN_WIKI_JOB_DEPARTMENT,
 )
@@ -38,6 +45,8 @@ class DepartmentRegistryJobsMixin:
         job: DepartmentJob,
         base_history: list[dict],
         stop_event: threading.Event,
+        *,
+        research_budget: ResearchBudget,
     ) -> str:
         """Multi-phase proactive run: RESEARCHER / CRITIC / VALIDATOR; outputs via kb_write."""
         phases = _PROACTIVE_ROLES[: self._proactive_iterations]
@@ -54,13 +63,8 @@ class DepartmentRegistryJobsMixin:
             self._persist_job(job)
             user_msg = f"[Phase {i}/{n} | {role}]\n\n{role_template}"
             if i == 1:
-                user_msg = (
-                    _PROACTIVE_CONTEXT.format(
-                        department=dept.name,
-                        label=dept.label,
-                    )
-                    + user_msg
-                )
+                mission = resolve_mission_for_job(dept, job)
+                user_msg = format_proactive_context(dept.name, dept.label, mission) + user_msg
 
             def _on_tool(name: str, preview: str, fn_args: dict | None = None) -> None:
                 detail = None
@@ -99,6 +103,7 @@ class DepartmentRegistryJobsMixin:
                 on_tool_call=_on_tool,
                 on_thinking=_on_think,
                 job_context={"job_id": job.id},
+                research_budget=research_budget,
             )
             history = history + [
                 {"role": "user", "content": user_msg},
@@ -113,6 +118,8 @@ class DepartmentRegistryJobsMixin:
         task: str,
         base_history: list[dict],
         stop_event: threading.Event,
+        *,
+        research_budget: ResearchBudget,
     ) -> str:
         """Multi-phase deep work with LLM-planned roles (fallback: static RESEARCHER/CRITIC/VALIDATOR)."""
         phases = plan_roles(dept.engine, task, dept.name, dept.label)
@@ -168,6 +175,13 @@ class DepartmentRegistryJobsMixin:
                     role=role,
                 ))
 
+            _PHASE_TOOL_RETRY = (
+                "Du hast in dieser Phase keine Tools aufgerufen. Führe jetzt die konkreten Tool-Calls "
+                "(kb_write / fetch_url / kb_read / kb_search) aus, die die Phase verlangt. "
+                "Schreibe das Deliverable per kb_write, bevor du zusammenfasst."
+            )
+
+            events_before = len(job.events)
             last_result = dept.run(
                 user_msg,
                 history=history if history else None,
@@ -175,11 +189,45 @@ class DepartmentRegistryJobsMixin:
                 on_tool_call=_on_tool,
                 on_thinking=_on_think,
                 job_context={"job_id": job.id},
+                research_budget=research_budget,
             )
-            history = history + [
-                {"role": "user", "content": user_msg},
-                {"role": "assistant", "content": last_result},
-            ]
+            phase_tool_calls = sum(
+                1 for e in job.events[events_before:] if e.type == "tool_call"
+            )
+            assistant_first = last_result
+            if (
+                role in ("WRITER", "RESEARCHER")
+                and phase_tool_calls == 0
+                and not stop_event.is_set()
+            ):
+                events_mid = len(job.events)
+                hist_retry = (history or []) + [
+                    {"role": "user", "content": user_msg},
+                    {"role": "assistant", "content": assistant_first},
+                ]
+                last_result = dept.run(
+                    _PHASE_TOOL_RETRY,
+                    history=hist_retry,
+                    stop_event=stop_event,
+                    on_tool_call=_on_tool,
+                    on_thinking=_on_think,
+                    job_context={"job_id": job.id},
+                    research_budget=research_budget,
+                )
+                phase_tool_calls += sum(
+                    1 for e in job.events[events_mid:] if e.type == "tool_call"
+                )
+                history = history + [
+                    {"role": "user", "content": user_msg},
+                    {"role": "assistant", "content": assistant_first},
+                    {"role": "user", "content": _PHASE_TOOL_RETRY},
+                    {"role": "assistant", "content": last_result},
+                ]
+            else:
+                history = history + [
+                    {"role": "user", "content": user_msg},
+                    {"role": "assistant", "content": last_result},
+                ]
             return last_result
 
         for idx, (role, role_template) in enumerate(phases, start=1):
@@ -212,11 +260,16 @@ class DepartmentRegistryJobsMixin:
         stop_event: threading.Event,
     ) -> str:
         """Run one or more LLM rounds (deep mode: multi-phase RESEARCHER/CRITIC/VALIDATOR pipeline)."""
+        budget = ResearchBudget(max_web_search=30)
         mode = job.mode if job.mode in ("single", "deep", "proactive") else "single"
         if mode == "proactive":
-            return self._run_proactive_pipeline(dept, job, base_history, stop_event)
+            return self._run_proactive_pipeline(
+                dept, job, base_history, stop_event, research_budget=budget,
+            )
         if mode == "deep":
-            return self._run_deep_pipeline(dept, job, task, base_history, stop_event)
+            return self._run_deep_pipeline(
+                dept, job, task, base_history, stop_event, research_budget=budget,
+            )
 
         # single mode — one shot
         history = list(base_history) if base_history else []
@@ -250,6 +303,7 @@ class DepartmentRegistryJobsMixin:
             on_tool_call=_on_tool_call_with_iter,
             on_thinking=_on_thinking_with_iter,
             job_context={"job_id": job.id},
+            research_budget=budget,
         )
 
     def _run_main_wiki_job_worker(
@@ -262,6 +316,7 @@ class DepartmentRegistryJobsMixin:
         """Single-shot orchestrator run for main-KB wiki ingest (same event shape as department jobs)."""
         from orqestra.api.state import state
 
+        budget = ResearchBudget(max_web_search=30)
         history = list(base_history) if base_history else []
         if stop_event.is_set():
             return "[Job cancelled by user]"
@@ -293,6 +348,7 @@ class DepartmentRegistryJobsMixin:
             on_tool_call=_on_tool_call_with_iter,
             on_thinking=_on_thinking_with_iter,
             job_context={"job_id": job.id},
+            research_budget=budget,
         )
 
     def submit_job(
@@ -303,6 +359,8 @@ class DepartmentRegistryJobsMixin:
         history: list[dict] | None = None,
         mode: str = "deep",
         pipeline_run_id: str | None = None,
+        proactive_mission_id: str | None = None,
+        proactive_mission_label: str | None = None,
     ) -> DepartmentJob:
         """Run a department task in a worker thread; returns immediately with a job id."""
         self._ensure_executor()
@@ -337,6 +395,8 @@ class DepartmentRegistryJobsMixin:
             max_iterations=eff_max,
             current_iteration=0,
             pipeline_run_id=pipeline_run_id,
+            proactive_mission_id=proactive_mission_id,
+            proactive_mission_label=proactive_mission_label,
         )
 
         def _worker() -> str:
@@ -408,14 +468,41 @@ class DepartmentRegistryJobsMixin:
         log.info("Submitted main-wiki ingest job %s", job_id)
         return job
 
-    def submit_proactive_job(self, dept_name: str) -> DepartmentJob:
-        """Submit a proactive research job for a department."""
-        task = _PROACTIVE_PROMPT.format(department=dept_name)
-        return self.submit_job(
-            dept_name,
-            task,
-            mode="proactive",
+    def submit_proactive_job(
+        self,
+        dept_name: str,
+        *,
+        mission_id: str | None = None,
+    ) -> list[DepartmentJob]:
+        """Submit one or more proactive multi-phase jobs (missions or generic prompt)."""
+        dept = self.get(dept_name)
+        if dept is None:
+            raise ValueError(f"Unknown department: {dept_name}")
+
+        missions: list[Mission] = pick_missions_for_run(
+            dept,
+            self._job_store,
+            mission_id=mission_id,
         )
+        if not missions:
+            j = self.submit_job(
+                dept_name,
+                proactive_task_text(dept_name, None),
+                mode="proactive",
+            )
+            return [j]
+        out: list[DepartmentJob] = []
+        for m in missions:
+            out.append(
+                self.submit_job(
+                    dept_name,
+                    proactive_task_text(dept_name, m),
+                    mode="proactive",
+                    proactive_mission_id=m.id,
+                    proactive_mission_label=m.label or m.id,
+                ),
+            )
+        return out
 
     def reply_to_job(self, job_id: str, message: str) -> DepartmentJob:
         """Continue a finished job *in place* — the conversation grows, the job ID stays."""
@@ -591,11 +678,9 @@ class DepartmentRegistryJobsMixin:
         return [j for j in self._jobs.values() if j.status() in ("pending", "running")]
 
     def recent_completed_jobs(self, limit: int = 20) -> list[DepartmentJob]:
-        cutoff = time.time() - _FINISHED_JOB_MAX_AGE
         done = [
             j for j in self._jobs.values()
             if j.status() in ("done", "cancelled", "error")
-            and (j.finished_at or j.started_at) >= cutoff
         ]
         done.sort(key=lambda x: x.started_at, reverse=True)
         return done[:limit]
@@ -626,16 +711,8 @@ class DepartmentRegistryJobsMixin:
         ]
 
     def jobs_for_display(self) -> list[DepartmentJob]:
-        """All tracked jobs, running first, then by recency.
-
-        Finished jobs older than 6 h are hidden.
-        """
-        cutoff = time.time() - _FINISHED_JOB_MAX_AGE
-        jobs = [
-            j for j in self._jobs.values()
-            if j.status() in ("pending", "running")
-            or (j.finished_at or j.started_at) >= cutoff
-        ]
+        """All tracked jobs, running first, then by recency (newest first)."""
+        jobs = list(self._jobs.values())
         jobs.sort(
             key=lambda j: (
                 0 if j.status() in ("pending", "running") else 1,

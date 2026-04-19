@@ -1,0 +1,145 @@
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* ── Logo ─────────────────────────────────────────────────────────── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 18px 16px 16px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: -0.01em;
+}
+
+.logoMark {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  display: block;
+}
+
+.logoText {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+/* ── Nav ──────────────────────────────────────────────────────────── */
+.nav {
+  flex: 1;
+  padding: 8px 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.sectionTitle {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  padding: 18px 8px 5px;
+  font-family: var(--font-mono);
+}
+
+/* ── Links ────────────────────────────────────────────────────────── */
+.link,
+.active {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: background 0.12s, color 0.12s;
+  text-decoration: none;
+  border: none;
+  background: none;
+  min-width: 0;
+}
+
+.link:hover {
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+}
+
+.active {
+  background: rgba(74, 222, 128, 0.07);
+  border: 1px solid rgba(74, 222, 128, 0.12);
+  color: var(--cta-text);
+  font-weight: 500;
+  padding: 5px 8px; /* -1px each to compensate border */
+}
+
+.linkIcon {
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+.active .linkIcon {
+  opacity: 1;
+}
+
+/* ── Department items ─────────────────────────────────────────────── */
+.deptIconWrap {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+}
+
+.deptLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deptBadge {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  color: var(--green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.apiHint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  padding: 5px 9px;
+  margin: 2px 0;
+  font-family: var(--font-mono);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 8px;
+}

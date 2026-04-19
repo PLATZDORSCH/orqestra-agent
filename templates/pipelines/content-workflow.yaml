@@ -1,0 +1,50 @@
+name: content-workflow
+label: Content Workflow
+label_de: Content-Workflow
+description: "Research → Draft with SEO-ready structure: end-to-end content pipeline."
+description_de: "Recherche → Entwurf mit SEO-tauglicher Struktur: Ende-zu-Ende Content-Pipeline."
+variable_descriptions:
+  topic: "Thema des Artikels, z.B. 'Nachhaltige Verpackungslösungen für E-Commerce'"
+required_departments:
+  - market-research
+  - content-creation
+steps:
+  - department: market-research
+    task_template:
+      en: |
+        Research thoroughly on the topic: {topic}
+
+        Provide a structured summary with key facts, trends, audiences, and relevant sources.
+      de: |
+        Recherchiere gründlich zum Thema: {topic}
+
+        Liefere eine strukturierte Zusammenfassung mit den wichtigsten Fakten,
+        Trends, Zielgruppen und relevanten Quellen.
+    result_key: research
+  - department: content-creation
+    task_template:
+      en: |
+        Write a full blog article based on the following research:
+
+        {research}
+
+        The article should be informative, well structured, and engaging.
+        Use subheadings and concrete examples.
+
+        Also optimize for SEO in the same draft: suggest meta title and meta description,
+        use a clear heading hierarchy (H1/H2/H3), note internal linking opportunities,
+        keep keyword use natural, and ensure readability.
+        Return the complete article including meta title, meta description, and body.
+      de: |
+        Schreibe einen ausführlichen Blog-Artikel basierend auf folgender Recherche:
+
+        {research}
+
+        Der Artikel soll informativ, gut strukturiert und ansprechend geschrieben sein.
+        Nutze Zwischenüberschriften und konkrete Beispiele.
+
+        Optimiere im selben Entwurf für SEO: schlage Meta-Title und Meta-Description vor,
+        nutze eine klare Heading-Struktur (H1/H2/H3), nenne interne Verlinkungsmöglichkeiten,
+        halte Keyword-Nutzung natürlich und achte auf Lesbarkeit.
+        Gib den vollständigen Artikel inkl. Meta-Title, Meta-Description und Fließtext zurück.
+    result_key: final

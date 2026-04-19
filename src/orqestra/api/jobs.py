@@ -22,10 +22,22 @@ router = APIRouter()
 
 
 @router.get("/api/jobs")
-def list_jobs(request: Request):
+def list_jobs(request: Request, offset: int = 0, limit: int = 20):
+    """Paginated list of tracked jobs.
+
+    Returns the full set sorted by `jobs_for_display` (running first, then by
+    recency). `limit=0` returns everything starting at `offset`.
+    """
     check_auth(request)
     jobs = state.registry.jobs_for_display()
-    return [
+    total = len(jobs)
+    off = max(0, int(offset))
+    lim = int(limit)
+    if lim <= 0:
+        sliced = jobs[off:]
+    else:
+        sliced = jobs[off : off + lim]
+    items = [
         {
             "job_id": j.id,
             "department": j.department,
@@ -34,9 +46,18 @@ def list_jobs(request: Request):
             "task_preview": j.task[:200],
             "mode": j.mode,
             "pipeline_run_id": j.pipeline_run_id,
+            "proactive_mission_id": j.proactive_mission_id,
+            "proactive_mission_label": j.proactive_mission_label,
         }
-        for j in jobs
+        for j in sliced
     ]
+    return {
+        "jobs": items,
+        "total": total,
+        "offset": off,
+        "limit": lim,
+        "has_more": (off + len(items)) < total,
+    }
 
 
 @router.get("/api/jobs/export/trajectories")
@@ -192,6 +213,8 @@ def get_job(job_id: str, request: Request):
         "eval_status": job.eval_status,
         "progress_pct": job.progress_pct,
         "pipeline_run_id": job.pipeline_run_id,
+        "proactive_mission_id": job.proactive_mission_id,
+        "proactive_mission_label": job.proactive_mission_label,
     }
 
 

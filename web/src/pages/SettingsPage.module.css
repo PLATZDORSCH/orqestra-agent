@@ -1,0 +1,90 @@
+.page {
+  flex: 1;
+  padding: 32px 40px;
+  max-width: 700px;
+}
+
+.heading {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 28px;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  margin-bottom: 5px;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: var(--cta-border);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btnSave {
+  background: var(--cta);
+  border: 1px solid var(--cta-border);
+  border-radius: var(--radius);
+  padding: 9px 22px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cta-text);
+  transition: all 0.15s;
+}
+
+.btnSave:hover {
+  background: var(--cta-hover);
+}
+
+.btnSave:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.saved {
+  font-size: 13px;
+  color: var(--green);
+  align-self: center;
+}

@@ -1,0 +1,76 @@
+name: positioning-statement
+label: Positioning Statement
+label_de: Positionierungs-Statement
+description: "Competitive landscape + market context → differentiated positioning and messaging."
+description_de: "Wettbewerbslandschaft + Marktkontext → differenzierte Positionierung und Messaging."
+variable_descriptions:
+  product: "Produkt oder Angebot, z.B. 'IoT-Gateway für Smart Cities'"
+  audience: "Zielgruppe, z.B. 'Kommunen und Systemintegratoren in der DACH-Region'"
+required_departments:
+  - competitive-intel
+  - market-research
+  - content-creation
+steps:
+  - department: competitive-intel
+    task_template:
+      en: |
+        Map the competitive landscape for this product and audience:
+
+        Product: {product}
+        Audience: {audience}
+
+        Identify main alternatives, positioning gaps, and differentiation opportunities.
+      de: |
+        Kartiere die Wettbewerbslandschaft für dieses Produkt und diese Zielgruppe:
+
+        Produkt: {product}
+        Zielgruppe: {audience}
+
+        Identifiziere Hauptalternativen, Positionierungslücken und Differenzierungschancen.
+    result_key: competitive_view
+  - department: market-research
+    task_template:
+      en: |
+        Ground the competitive view in market context for {product} / {audience}:
+
+        {competitive_view}
+
+        Add audience needs, buying criteria, trends, and proof points that support positioning.
+      de: |
+        Verankere die Wettbewerbssicht im Marktkontext für {product} / {audience}:
+
+        {competitive_view}
+
+        Ergänze Bedürfnisse der Zielgruppe, Kaufkriterien, Trends und Belege für die Positionierung.
+    result_key: market_context
+  - department: content-creation
+    task_template:
+      en: |
+        Produce a positioning statement and messaging kit for:
+
+        Product: {product}
+        Audience: {audience}
+
+        Competitive view:
+        {competitive_view}
+
+        Market context:
+        {market_context}
+
+        Deliver: one-sentence positioning, 3–5 value pillars, headline + subline,
+        elevator pitch (30s), and 3 objection-handling bullets.
+      de: |
+        Erstelle ein Positionierungs-Statement und Messaging-Kit für:
+
+        Produkt: {product}
+        Zielgruppe: {audience}
+
+        Wettbewerbssicht:
+        {competitive_view}
+
+        Marktkontext:
+        {market_context}
+
+        Liefere: Positionierung in einem Satz, 3–5 Wert-Säulen, Headline + Subline,
+        Elevator Pitch (30s), 3 Einwandbehandlungen.
+    result_key: positioning_kit

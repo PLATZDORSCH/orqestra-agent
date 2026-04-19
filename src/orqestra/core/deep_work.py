@@ -30,7 +30,9 @@ _DEEP_WORK_CONTEXT = """## Job context
 
 - **Department** (organizational): `{department}` (label: {label})
   The department name describes this team's **function** (e.g. writing text, analyzing markets), **not** the topic of the assignment. The topic comes solely from the assignment itself.
-- **Required**: Check the wiki (`kb_search`, `kb_list`, `kb_read`) before researching externally.
+- **Skill references** in the assignment (e.g. "Procedure per skill: …") describe **how** to work, **not** what to research. Do not treat the skill title or department label as a search topic.
+- If the assignment is effectively a **bare URL or domain** (few words plus a URL), treat it as a **site extraction** task: start with `fetch_url` on that URL, then use `kb_search` only to check for **duplicate coverage of that same URL/domain**, not to look up the department's function name.
+- **Required**: Check the wiki (`kb_search`, `kb_list`, `kb_read`) before researching externally — except for bare-URL extraction tasks, where `fetch_url` on the target site comes first.
 - **Outputs**: Save in the department wiki (`kb_write`). Mark exactly **one** main page as deliverable (`job_role: deliverable`); supporting pages as `supporting`.
 - **Tags**: Every wiki page **must** have at least one **thematic tag** (e.g. `ki-pflegeheim`, `linkedin-strategie`, `seo-audit`) naming the concrete topic — not only generic tags like `ki` or `analyse`. Pages on the same topic must share the same thematic tag.
 
@@ -46,6 +48,14 @@ def _deep_work_role_prompts() -> list[tuple[str, str]]:
             (
                 "You are the **research and execution agent** (phase 1).\n"
                 "- Execute the **assignment** below using appropriate tools (`kb_*`, `web_search`, `fetch_url`, …).\n"
+                "- If the assignment is effectively a **bare URL or domain**, begin with `fetch_url` on that URL — do not `kb_search` for the department's own function name as if it were a topic.\n"
+                "- Never use the **department label** or the **skill title** as a search query; those describe *what you do*, not *what you look for*.\n"
+                "- Check the wiki first (`kb_search`, `kb_read`) for each sub-topic; only hit `web_search` if the wiki has nothing relevant (after any required `fetch_url` for known URLs).\n"
+                "- Prefer `fetch_url` whenever the assignment already names a domain or URL.\n"
+                "- Web-search budget is limited (server-enforced ~30 calls). Plan queries sparingly.\n"
+                "- Do not repeat a query with only a minor variation (e.g. changed year, swapped word). "
+                "If two queries on the same topic return no useful results, drop the sub-topic and note the gap.\n"
+                "- Max 3 quoted phrases per `web_search` query.\n"
                 "- Document results in the wiki in a structured way.\n"
                 "- Not the final handoff yet — deliver substantial intermediate results."
             ),
@@ -71,6 +81,10 @@ def _deep_work_role_prompts() -> list[tuple[str, str]]:
             (
                 "You are again the **execution agent** (phase 4).\n"
                 "- Close the gaps called out by criticism and validation.\n"
+                "- Do not search the wiki for the department name or skill title as a topic; use `kb_search`/`kb_read` for gaps about the **assignment subject** only.\n"
+                "- Check the wiki first (`kb_search`, `kb_read`) for each gap; prefer `fetch_url` when you already know the URL; "
+                "use `web_search` sparingly (shared budget ~30 calls per job).\n"
+                "- Do not repeat queries with only minor variations; max 3 quoted phrases per web search.\n"
                 "- Update or add wiki pages."
             ),
         ),
@@ -154,13 +168,20 @@ def formulate_job_task_from_chat(
     *,
     department_label: str,
     turns: list[dict[str, Any]],
+    draft_message: str | None = None,
 ) -> tuple[str, str]:
     """Use the LLM to turn a chat transcript into a concrete job task string.
+
+    ``draft_message`` is the freshly typed (but not yet sent) input from the
+    user. When provided it represents the **current** intent and takes
+    precedence over older turns (which may describe a completely different,
+    already-finished task).
 
     Returns (full_task, short_summary) for API responses.
     """
     transcript = _format_chat_turns_for_prompt(turns)
-    if not transcript:
+    draft = (draft_message or "").strip()
+    if not transcript and not draft:
         raise ValueError("Empty chat transcript.")
 
     system = (
@@ -168,10 +189,22 @@ def formulate_job_task_from_chat(
         "The task must be understandable and actionable from the chat alone (wiki research, writing, analysis).\n"
         "Important: The department name describes the team's **function** (e.g. writing text), "
         "**not** the topic of the assignment. Derive the topic only from the chat content.\n"
+        "If a `Current user request` is present at the end, it represents the user's **current** intent "
+        "and takes precedence over older turns that may describe a different, already-completed task. "
+        "Use the prior chat only as background context.\n"
         "Respond with **only one JSON object** (no markdown fences):\n"
         '{"task": "<full task description, same language as the chat>", "summary": "<max 120 chars>"}\n'
     )
-    user = f"Department (organisatorisch): {department_label}\n\n--- Chat ---\n{transcript[:24000]}\n--- Ende ---\n"
+    transcript_block = transcript[:24000] if transcript else "(no prior turns)"
+    draft_block = (
+        f"\n\n--- Current user request (authoritative) ---\n{draft[:12000]}\n--- Ende ---\n"
+        if draft
+        else ""
+    )
+    user = (
+        f"Department (organisatorisch): {department_label}\n\n"
+        f"--- Chat ---\n{transcript_block}\n--- Ende ---{draft_block}"
+    )
     resp = engine.llm.chat.completions.create(
         model=engine.model,
         messages=[
@@ -308,6 +341,9 @@ def plan_roles(
         "4. **Critique** (CRITIC): assess completeness, quality, and consistency.\n"
         "5. **Validation** (VALIDATOR): final check and ensure deliverable.\n"
         "Include WRITER for writing-heavy tasks.\n\n"
+        "**Web search budget**: RESEARCHER phases share a limited number of `web_search` calls per job "
+        "(server-enforced); prefer ANALYST plus `kb_search`/`kb_read` to consolidate gaps before opening "
+        "more external searches.\n\n"
         "For **simple** tasks, 3–4 phases suffice (e.g. RESEARCHER → CRITIC → VALIDATOR). "
         "For **complex** topics use 5–8 phases with gap analysis and multiple research rounds.\n"
         "At least **3** phases, at most **8**.\n"

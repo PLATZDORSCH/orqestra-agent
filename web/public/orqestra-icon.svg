@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="#0a1f10"/>
+  <rect width="64" height="64" rx="14" stroke="#4ade80" stroke-width="1.5" stroke-opacity="0.35"/>
+
+  <!-- Connection lines center → corner nodes -->
+  <line x1="32" y1="32" x2="13" y2="13" stroke="#4ade80" stroke-width="1.5" stroke-opacity="0.5"/>
+  <line x1="32" y1="32" x2="51" y2="13" stroke="#4ade80" stroke-width="1.5" stroke-opacity="0.5"/>
+  <line x1="32" y1="32" x2="13" y2="51" stroke="#4ade80" stroke-width="1.5" stroke-opacity="0.5"/>
+  <line x1="32" y1="32" x2="51" y2="51" stroke="#4ade80" stroke-width="1.5" stroke-opacity="0.5"/>
+
+  <!-- Corner dept nodes -->
+  <circle cx="13" cy="13" r="5" fill="#0d2914" stroke="#4ade80" stroke-width="1.5"/>
+  <circle cx="51" cy="13" r="5" fill="#0d2914" stroke="#4ade80" stroke-width="1.5"/>
+  <circle cx="13" cy="51" r="5" fill="#0d2914" stroke="#4ade80" stroke-width="1.5"/>
+  <circle cx="51" cy="51" r="5" fill="#0d2914" stroke="#4ade80" stroke-width="1.5"/>
+
+  <!-- Corner dots -->
+  <circle cx="13" cy="13" r="2" fill="#4ade80"/>
+  <circle cx="51" cy="13" r="2" fill="#4ade80"/>
+  <circle cx="13" cy="51" r="2" fill="#4ade80"/>
+  <circle cx="51" cy="51" r="2" fill="#4ade80"/>
+
+  <!-- Center glow ring -->
+  <circle cx="32" cy="32" r="11" fill="#0d2914" stroke="#4ade80" stroke-width="2"/>
+
+  <!-- Center core -->
+  <circle cx="32" cy="32" r="4.5" fill="#4ade80"/>
+</svg>

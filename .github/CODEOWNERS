@@ -1,0 +1,25 @@
+# Code owners for Orqestra.
+# Every pull request requires review from a code owner before it can be merged
+# (combined with the matching branch protection rule on `main`).
+#
+# Syntax: <pattern> <owner> [<owner>...]
+# Order matters — later rules override earlier ones for the same path.
+
+# Default owner for everything in the repo
+*                           @PLATZDORSCH
+
+# Critical surface — extra attention on PRs that touch these
+/Dockerfile                 @PLATZDORSCH
+/compose.yaml               @PLATZDORSCH
+/pyproject.toml             @PLATZDORSCH
+/requirements.txt           @PLATZDORSCH
+/.github/                   @PLATZDORSCH
+/LICENSE                    @PLATZDORSCH
+
+# Backend
+/src/orqestra/api/          @PLATZDORSCH
+/src/orqestra/core/         @PLATZDORSCH
+/src/orqestra/capabilities/ @PLATZDORSCH
+
+# Frontend
+/web/                       @PLATZDORSCH

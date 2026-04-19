@@ -1,0 +1,63 @@
+name: market-entry-brief
+label: Market Entry Brief
+label_de: Markteinstiegs-Briefing
+description: "Market trends + competitive landscape → executive brief for market entry."
+description_de: "Markttrends + Wettbewerbslandschaft → Executive-Briefing für den Markteintritt."
+variable_descriptions:
+  market: "Zielmarkt oder Segment, z.B. 'HR-Software für KMU in der DACH-Region'"
+required_departments:
+  - market-research
+  - competitive-intel
+  - content-creation
+steps:
+  - department: market-research
+    task_template:
+      en: |
+        Analyze the market: {market}
+
+        Cover market size, growth, trends, audience segments, drivers, and risks.
+      de: |
+        Analysiere den Markt: {market}
+
+        Liefere Marktgröße, Wachstum, Trends, Zielgruppen-Segmente, Treiber und Risiken.
+    result_key: market_analysis
+  - department: competitive-intel
+    task_template:
+      en: |
+        Based on the following market analysis, identify key competitors for {market}
+        and produce SWOT-style profiles (pricing, positioning, differentiators).
+
+        Market analysis:
+        {market_analysis}
+      de: |
+        Identifiziere auf Basis der folgenden Marktanalyse die wichtigsten Wettbewerber
+        für {market} und erstelle SWOT-ähnliche Profile (Pricing, Positionierung, Differenzierer).
+
+        Marktanalyse:
+        {market_analysis}
+    result_key: competitors
+  - department: content-creation
+    task_template:
+      en: |
+        Write an executive brief (max. 2 pages) for market entry into: {market}
+
+        Market analysis:
+        {market_analysis}
+
+        Competitor profiles:
+        {competitors}
+
+        Structure: key messages, opportunities, risks, recommended positioning,
+        and 3–5 concrete next steps.
+      de: |
+        Erstelle ein Executive-Briefing (max. 2 Seiten) für den Markteintritt in: {market}
+
+        Marktanalyse:
+        {market_analysis}
+
+        Wettbewerber-Profile:
+        {competitors}
+
+        Struktur: Kernaussagen, Chancen, Risiken, empfohlene Positionierung,
+        3–5 konkrete nächste Schritte.
+    result_key: brief
