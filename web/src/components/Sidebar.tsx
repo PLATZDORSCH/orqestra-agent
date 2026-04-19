@@ -131,6 +131,10 @@ export function Sidebar({ departments, departmentsError, jobs = [] }: Props) {
           <p className={styles.apiHint}>{t('nav.apiUnreachable')}</p>
         )}
       </div>
+
+      <div className={styles.footer}>
+        <span className={styles.versionLabel}>v{__APP_VERSION__}</span>
+      </div>
     </nav>
   );
 }

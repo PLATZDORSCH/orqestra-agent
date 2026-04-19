@@ -7,13 +7,40 @@ LLM calls and tool execution, plus color helpers for the REPL.
 from __future__ import annotations
 
 import itertools
+import re
 import sys
 import threading
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
 from orqestra._paths import REPO_ROOT
 from orqestra.core.departments import DepartmentJob, DepartmentRegistry
 
 _LOGO_PATH = REPO_ROOT / "ascii_logo.txt"
 _BANNER_LOGO_LINES: list[str] | None = None
+
+
+def _read_app_version() -> str:
+    """Resolve the app version.
+
+    Prefers ``pyproject.toml`` when the source tree is available (editable
+    installs would otherwise return stale ``dist-info`` metadata after a
+    version bump without reinstall). Falls back to installed metadata for
+    real wheel installs where the source tree is gone.
+    """
+    pyproject = REPO_ROOT / "pyproject.toml"
+    try:
+        text = pyproject.read_text(encoding="utf-8")
+        m = re.search(r'^\s*version\s*=\s*"([^"]+)"', text, flags=re.MULTILINE)
+        if m:
+            return m.group(1)
+    except OSError:
+        pass
+    try:
+        return _pkg_version("orqestra")
+    except PackageNotFoundError:
+        return "0.0.0"
+
+
+APP_VERSION: str = _read_app_version()
 
 
 def _banner_logo_lines() -> list[str]:
@@ -93,7 +120,7 @@ def print_banner(model: str) -> None:
     logo_lines = _banner_logo_lines()
     info = [
         "",
-        f"  {BOLD}Orqestra{RESET}",
+        f"  {BOLD}Orqestra{RESET} {DIM}v{APP_VERSION}{RESET}",
         f"  {DIM}Orchestrator · Multi-Agent{RESET}",
         "",
         f"  {DIM}Model:{RESET} {model}",

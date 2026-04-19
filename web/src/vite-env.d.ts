@@ -8,3 +8,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/** Injected at build time by `vite.config.ts` from `pyproject.toml`. */
+declare const __APP_VERSION__: string;
