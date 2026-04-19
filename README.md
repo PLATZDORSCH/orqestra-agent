@@ -2,6 +2,26 @@
 
 Multi-department business consulting agent with specialized sub-agents, integrated wiki knowledge bases, and proactive multi-phase department jobs.
 
+## Quick start
+
+Three commands and you're up — assumes Docker is installed.
+
+```bash
+git clone https://github.com/PLATZDORSCH/orqestra-agent.git
+cd orqestra-agent
+./scripts/bootstrap.sh        # creates .env + state files (idempotent)
+```
+
+Open `.env` and set at least `OPENAI_API_KEY` (any OpenAI-compatible API works — see [Configuration](#configuration) for local models). Then:
+
+```bash
+docker compose up -d
+```
+
+Open **http://localhost:4200** — the setup wizard collects your project context, the built-in department templates (Market Research, Content Creation, Competitive Intelligence) auto-install on first start.
+
+> Need more detail? Jump to [Installation](#installation), [Configuration](#configuration), or the [docs site](https://platzdorsch.github.io/orqestra-agent/docs/).
+
 ## What is this?
 
 An AI agent system that helps businesses with strategy, SEO, marketing, finance, and operations. It connects to any OpenAI-compatible API and uses a **multi-agent architecture**: an orchestrator routes tasks to specialized departments, each with its own knowledge base, skills, and expertise.
@@ -217,7 +237,7 @@ On first launch the Web UI shows a **setup wizard** that asks for project contex
 
 ### Departments
 
-Orqestra starts **without any departments** — on first launch only the orchestrator with its shared knowledge base is available. You can talk to it right away; departments can be added at any time:
+On a **fresh install**, if `departments.yaml` is empty, Orqestra **auto-installs** the built-in templates from `templates/` (Market Research, Content Creation, Competitive Intelligence) and populates `departments.yaml` and `departments/`. The orchestrator and shared wiki are always available; you can add more departments at any time:
 
 - **Web UI:** Department Builder at `/departments/new` — a wizard walks you through persona, skills, and capabilities. Pre-built templates are available at the top.
 - **CLI:** `/department install market-research` to install a template, or `/department` for the interactive wizard.
