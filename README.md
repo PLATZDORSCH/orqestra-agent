@@ -222,6 +222,38 @@ docker compose up -d
 
 That's it. The Web UI is available at **http://localhost:4200**.
 
+### Updating
+
+To upgrade an existing Docker install:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+The Source-Code, the built Web frontend and the Python dependencies are baked into the image — `--build` rebuilds them from the freshly pulled tree. Your **user data is preserved** because it lives on the host and is bind-mounted into the container:
+
+- `config.yaml`, `project.yaml`, `departments.yaml`, `pipelines.yaml`
+- `departments/`, `knowledge_base/`, `skills/`, `data/`
+
+A few things to know:
+
+- `docker compose pull` does **not** apply — the `orqestra:latest` image is built locally, not fetched from a registry.
+- The four tracked YAML files (`config.yaml`, `project.yaml`, `departments.yaml`, `pipelines.yaml`) can produce merge conflicts on `git pull` if you have edited them locally. `git stash` before the pull, then `git stash pop` and merge by hand.
+- Check `CHANGELOG.md` before each update — breaking schema changes (rare) are documented there.
+- Smoke check after the rebuild:
+  ```bash
+  docker compose ps
+  docker compose logs -f orqestra   # banner shows the new version
+  ```
+  In the Web UI the version is shown in the bottom-left of the sidebar.
+
+To free up disk space from old image layers afterwards:
+
+```bash
+docker image prune -f
+```
+
 ## Configuration
 
 Orqestra uses these configuration files:
