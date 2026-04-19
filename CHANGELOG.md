@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] — Web UI polish & docs
+
+### Added
+- README: new **Quick start** section so new users can clone, bootstrap and
+  `docker compose up` in three commands without scrolling.
+- Link from the README to the docs site at
+  <https://orqestra.platzdorsch.io/docs/>.
+
+### Changed
+- Web UI: chat window and department page received layout/UX improvements —
+  refined message rendering, spacing, and status indicators
+  (`web/src/components/ChatWindow.{tsx,module.css}`,
+  `web/src/pages/DepartmentPage.{tsx,module.css}`).
+- Orchestrator persona (English + German): tightened wording and corrected
+  references to the available departments.
+- `templates/pipelines/full-audit.yaml`: minor pipeline adjustment.
+
+## [0.1.0] — Initial public release
+
 ### Added
 - `LICENSE` (MIT) at the repository root.
 - `CHANGELOG.md` (this file).
@@ -27,17 +46,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Single source of truth for the version: `orqestra.__version__` is read from
   the installed package metadata (`importlib.metadata`), the FastAPI app and
   `/api/version` use it.
+- `scripts/bootstrap.sh`: idempotent setup script that creates `.env`,
+  `project.yaml` and the runtime YAML registries before `docker compose up`,
+  preventing Docker from auto-creating empty directories where files are
+  expected.
 
 ### Changed
 - `compose.yaml`: renamed the service from `cod` to `orqestra` and pinned an
   `image: orqestra:latest` tag so commands like
   `docker compose run --rm orqestra ...` from the README work as documented.
+- `compose.yaml`: bind-mounts for the YAML config files now use
+  `bind: { create_host_path: false }` so a missing host file fails loudly
+  instead of silently turning into an empty directory.
 - `Dockerfile`: no longer copies `departments/` or `knowledge_base/` into the
   image — they are mounted from the host at runtime so installed departments
   and wiki content are not baked into a public image.
 - `README.md`: rewritten in English, real repository URL
-  (`https://github.com/PLATZDORSCH/orqestra-agent`) and updated commands matching
-  the new compose service name.
+  (`https://github.com/PLATZDORSCH/orqestra-agent`) and updated commands
+  matching the new compose service name.
 - `web/package.json`: bumped version `0.0.0` → `0.1.0` to match the Python
   package.
 - `config.yaml`: `llm.base_url` and `llm.model` are now resolved from
@@ -50,8 +76,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the public repo (FTS indexes, per-department wikis, `data/`, `output/`,
   `personal_knowledge/`, `project.yaml`, IDE/OS junk, build artefacts).
 
-## [0.1.0] — Initial public release
+### Fixed
+- Early, actionable error when `departments.yaml` or `pipelines.yaml` is a
+  directory instead of a file (the classic Docker bind-mount footgun on a
+  fresh clone). `core/registry_yaml.py` and `core/pipelines.py` now raise a
+  `RuntimeError` pointing to `scripts/bootstrap.sh`.
 
+### Notes
 First public version of Orqestra:
 
 - Multi-department orchestrator with delegated background jobs.
@@ -70,5 +101,6 @@ First public version of Orqestra:
   `analyze_page_seo`, `axe_wcag_scan`, `run_script`, `read_data`,
   `generate_chart`, KB CRUD and cross-department search.
 
-[Unreleased]: https://github.com/PLATZDORSCH/orqestra-agent/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/PLATZDORSCH/orqestra-agent/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/PLATZDORSCH/orqestra-agent/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/PLATZDORSCH/orqestra-agent/releases/tag/v0.1.0
