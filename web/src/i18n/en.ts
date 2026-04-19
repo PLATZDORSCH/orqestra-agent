@@ -120,7 +120,11 @@ export const en = {
   'chat.placeholderMessage': 'Message…',
   'chat.jobFromConversation': 'Start conversation as background job',
   'chat.sendAria': 'Send',
-  'chat.hintEnter': 'Enter to send · Shift+Enter for newline',
+  'chat.hintEnter': 'Enter to choose · Shift+Enter for newline',
+  'chat.sendModalTitle': 'How do you want to send?',
+  'chat.sendModalChat': 'Chat',
+  'chat.sendModalChatDesc': 'Answer inline in the conversation',
+  'chat.sendModalCancel': 'Cancel',
   'upload.kindImage': 'Image analysis',
   'upload.kindFile': 'File',
   'upload.wikiHint':

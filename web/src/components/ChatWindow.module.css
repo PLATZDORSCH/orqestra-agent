@@ -429,23 +429,24 @@
   justify-content: center;
   width: 34px;
   height: 34px;
-  background: transparent;
-  border: 1px solid var(--border);
+  background: rgba(22, 163, 74, 0.14);
+  border: 1px solid rgba(74, 222, 128, 0.4);
   border-radius: var(--radius);
-  color: var(--text-dim);
+  color: var(--cta-text);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
 }
 
 .jobPlayBtn:hover:not(:disabled) {
-  background: var(--accent-bg);
-  color: var(--accent);
-  border-color: var(--accent-dim);
+  background: rgba(22, 163, 74, 0.26);
+  border-color: rgba(74, 222, 128, 0.65);
+  box-shadow: 0 0 12px rgba(22, 163, 74, 0.22);
 }
 
 .jobPlayBtn:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
@@ -476,4 +477,118 @@
   font-size: 11px;
   color: var(--text-muted);
   text-align: center;
+}
+
+/* ── Send-Modus-Modal ─────────────────────────────────────────────── */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.12s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: var(--bg-elevated, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  width: 320px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: slideUp 0.14s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modalTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 2px;
+}
+
+.modalOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modalOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: var(--bg-surface, var(--bg));
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  width: 100%;
+}
+
+.modalOption:hover {
+  background: var(--bg);
+  border-color: var(--border);
+}
+
+.modalOptionIcon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--text-dim);
+}
+
+.modalOptionIconGreen {
+  color: var(--cta-text);
+}
+
+.modalOptionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.modalOptionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.modalOptionDesc {
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.modalCancel {
+  align-self: center;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.1s;
+}
+.modalCancel:hover {
+  color: var(--text-dim);
 }

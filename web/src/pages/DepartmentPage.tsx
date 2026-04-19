@@ -17,6 +17,7 @@ import {
   FileText,
   Plus,
   Brain,
+  MessageSquare,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -105,6 +106,7 @@ export function DepartmentPage({
   const name = departmentName;
   const [searchParams, setSearchParams] = useSearchParams();
   const [input, setInput] = useState('');
+  const [sendModalOpen, setSendModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<SkillItem | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -792,7 +794,18 @@ export function DepartmentPage({
               className={styles.inputField}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!inputDisabled && (input.trim() || attachment)) {
+                    if (canStartJobFromChat) {
+                      setSendModalOpen(true);
+                    } else {
+                      handleSend();
+                    }
+                  }
+                }
+              }}
               placeholder={
                 selectedSkill
                   ? t('dept.chatPlaceholderSkill', { title: selectedSkill.title ?? selectedSkill.name })
@@ -1288,6 +1301,52 @@ export function DepartmentPage({
                   : t('dept.deleteJobTitle')}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {sendModalOpen && (
+        <div className={styles.modalBackdrop} onClick={() => setSendModalOpen(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <p className={styles.modalTitle}>{t('chat.sendModalTitle')}</p>
+            <div className={styles.modalOptions}>
+              <button
+                type="button"
+                className={styles.modalOption}
+                onClick={() => { setSendModalOpen(false); handleSend(); }}
+              >
+                <span className={styles.modalOptionIcon}><MessageSquare size={18} /></span>
+                <span className={styles.modalOptionBody}>
+                  <span className={styles.modalOptionTitle}>{t('chat.sendModalChat')}</span>
+                  <span className={styles.modalOptionDesc}>{t('chat.sendModalChatDesc')}</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.modalOption} ${styles.modalOptionJob}`}
+                onClick={() => { setSendModalOpen(false); void handleStartJobFromChat('single'); }}
+              >
+                <span className={styles.modalOptionIconPurple}><Zap size={18} /></span>
+                <span className={styles.modalOptionBody}>
+                  <span className={styles.modalOptionTitle}>{t('jobs.mode.simpleTitle')}</span>
+                  <span className={styles.modalOptionDesc}>{t('jobs.mode.simpleDesc')}</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className={`${styles.modalOption} ${styles.modalOptionJob}`}
+                onClick={() => { setSendModalOpen(false); void handleStartJobFromChat('deep'); }}
+              >
+                <span className={styles.modalOptionIconPurple}><Repeat size={18} /></span>
+                <span className={styles.modalOptionBody}>
+                  <span className={styles.modalOptionTitle}>{t('jobs.mode.deepTitle')}</span>
+                  <span className={styles.modalOptionDesc}>{t('jobs.mode.deepDesc')}</span>
+                </span>
+              </button>
+            </div>
+            <button type="button" className={styles.modalCancel} onClick={() => setSendModalOpen(false)}>
+              {t('chat.sendModalCancel')}
+            </button>
           </div>
         </div>
       )}

@@ -113,7 +113,11 @@ export const de: Record<keyof typeof en, string> = {
   'chat.placeholderMessage': 'Nachricht…',
   'chat.jobFromConversation': 'Konversation als Hintergrund-Job starten',
   'chat.sendAria': 'Senden',
-  'chat.hintEnter': 'Enter zum Senden · Shift+Enter für Zeilenumbruch',
+  'chat.hintEnter': 'Enter zum Auswählen · Shift+Enter für Zeilenumbruch',
+  'chat.sendModalTitle': 'Wie möchtest du senden?',
+  'chat.sendModalChat': 'Chat',
+  'chat.sendModalChatDesc': 'Antwort direkt in der Konversation',
+  'chat.sendModalCancel': 'Abbrechen',
   'upload.kindImage': 'Bildanalyse',
   'upload.kindFile': 'Datei',
   'upload.wikiHint':

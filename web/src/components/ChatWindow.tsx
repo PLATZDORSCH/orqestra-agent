@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Send, Loader2, Paperclip, X } from 'lucide-react';
+import { Send, Loader2, Paperclip, X, MessageSquare, Play, Zap } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { api, formatUploadUserMessage, type Department, type ProgressEvent, type UploadResult } from '../api/client';
@@ -57,6 +57,7 @@ export function ChatWindow({
   const { t } = useI18n();
   const { loading, steps, thinkingLabel } = streamState;
   const [input, setInput] = useState('');
+  const [sendModalOpen, setSendModalOpen] = useState(false);
   const [jobSubmitting, setJobSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState<
@@ -400,7 +401,18 @@ export function ChatWindow({
               className={styles.input}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (!loading && !uploading && sessionId && (input.trim() || pendingAttachment)) {
+                    if (canStartOrchestratorJob) {
+                      setSendModalOpen(true);
+                    } else {
+                      handleSend();
+                    }
+                  }
+                }
+              }}
               placeholder={pendingAttachment ? t('chat.placeholderTask') : t('chat.placeholderMessage')}
               disabled={loading || uploading || !sessionId}
             />
@@ -423,6 +435,52 @@ export function ChatWindow({
           <p className={styles.inputHint}>{t('chat.hintEnter')}</p>
         </div>
       </div>
+
+      {sendModalOpen && (
+        <div className={styles.modalBackdrop} onClick={() => setSendModalOpen(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <p className={styles.modalTitle}>{t('chat.sendModalTitle')}</p>
+            <div className={styles.modalOptions}>
+              <button
+                type="button"
+                className={styles.modalOption}
+                onClick={() => { setSendModalOpen(false); handleSend(); }}
+              >
+                <span className={styles.modalOptionIcon}><MessageSquare size={18} /></span>
+                <span className={styles.modalOptionBody}>
+                  <span className={styles.modalOptionTitle}>{t('chat.sendModalChat')}</span>
+                  <span className={styles.modalOptionDesc}>{t('chat.sendModalChatDesc')}</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className={styles.modalOption}
+                onClick={() => { setSendModalOpen(false); void handleOrchestratorJob('single'); }}
+              >
+                <span className={`${styles.modalOptionIcon} ${styles.modalOptionIconGreen}`}><Zap size={18} /></span>
+                <span className={styles.modalOptionBody}>
+                  <span className={styles.modalOptionTitle}>{t('jobs.mode.simpleTitle')}</span>
+                  <span className={styles.modalOptionDesc}>{t('jobs.mode.simpleDesc')}</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className={styles.modalOption}
+                onClick={() => { setSendModalOpen(false); void handleOrchestratorJob('deep'); }}
+              >
+                <span className={`${styles.modalOptionIcon} ${styles.modalOptionIconGreen}`}><Play size={18} /></span>
+                <span className={styles.modalOptionBody}>
+                  <span className={styles.modalOptionTitle}>{t('jobs.mode.deepTitle')}</span>
+                  <span className={styles.modalOptionDesc}>{t('jobs.mode.deepDesc')}</span>
+                </span>
+              </button>
+            </div>
+            <button type="button" className={styles.modalCancel} onClick={() => setSendModalOpen(false)}>
+              {t('chat.sendModalCancel')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
