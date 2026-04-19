@@ -205,6 +205,13 @@ class PipelineRun:
 
 def load_pipelines_yaml(root: Path, language: str | None = None) -> list[PipelineDef]:
     path = root / "pipelines.yaml"
+    if path.is_dir():
+        raise RuntimeError(
+            f"{path} exists as a directory but must be a regular file. "
+            "This usually means Docker auto-created the bind-mount target. "
+            f"Fix on the host: `rmdir {path.name} && touch {path.name}` "
+            "(or run scripts/bootstrap.sh once before `docker compose up`).",
+        )
     if not path.is_file():
         return []
     if language is None:
@@ -235,6 +242,13 @@ def load_pipelines_yaml(root: Path, language: str | None = None) -> list[Pipelin
 
 def save_pipelines_yaml(root: Path, pipelines: list[PipelineDef]) -> None:
     path = root / "pipelines.yaml"
+    if path.is_dir():
+        raise RuntimeError(
+            f"{path} exists as a directory but must be a regular file. "
+            "This usually means Docker auto-created the bind-mount target. "
+            f"Fix on the host: `rmdir {path.name} && touch {path.name}` "
+            "(or run scripts/bootstrap.sh once before `docker compose up`).",
+        )
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write(

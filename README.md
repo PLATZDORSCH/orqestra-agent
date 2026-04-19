@@ -188,14 +188,16 @@ git clone https://github.com/PLATZDORSCH/orqestra-agent.git
 cd orqestra-agent
 ```
 
+Run the bootstrap script once to create `.env` and the YAML state files Docker will bind-mount (without this step Docker would silently turn missing files into empty directories and the app would crash on first start):
+
 ```bash
-export OPENAI_API_KEY="sk-..."
+./scripts/bootstrap.sh
 ```
 
-Then start (Docker builds the image on first run, including the frontend):
+Open `.env` and set at least your `OPENAI_API_KEY`, then start (Docker builds the image on first run, including the frontend):
 
 ```bash
-docker compose up
+docker compose up -d
 ```
 
 That's it. The Web UI is available at **http://localhost:4200**.

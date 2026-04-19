@@ -1,3 +1,9 @@
+# ─────────────────────────────────────────────────────────────────────────
+# IMPORTANT: run `./scripts/bootstrap.sh` once after `git clone`.
+# It creates .env + the small YAML state files that Docker bind-mounts
+# below.  Without it Docker would silently turn missing files into empty
+# directories and the app would crash with "IsADirectoryError" on startup.
+# ─────────────────────────────────────────────────────────────────────────
 services:
   orqestra:
     build: .
@@ -16,12 +22,26 @@ services:
       - SEARXNG_URL=${SEARXNG_URL:-}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
     volumes:
-      # Configuration (edit on the host, restart the container to apply)
-      - ./config.yaml:/app/config.yaml
-      - ./project.yaml:/app/project.yaml
-      - ./departments.yaml:/app/departments.yaml
-      - ./pipelines.yaml:/app/pipelines.yaml
-      # Persistent state — created on first run if missing
+      # ── Configuration files (edit on host, restart container) ────────
+      # `create_host_path: false` makes Docker fail loudly if the file
+      # is missing, instead of creating an empty directory in its place.
+      - type: bind
+        source: ./config.yaml
+        target: /app/config.yaml
+        bind: { create_host_path: false }
+      - type: bind
+        source: ./project.yaml
+        target: /app/project.yaml
+        bind: { create_host_path: false }
+      - type: bind
+        source: ./departments.yaml
+        target: /app/departments.yaml
+        bind: { create_host_path: false }
+      - type: bind
+        source: ./pipelines.yaml
+        target: /app/pipelines.yaml
+        bind: { create_host_path: false }
+      # ── Persistent state — directory mounts (auto-created if missing) ─
       - ./departments:/app/departments
       - ./knowledge_base:/app/knowledge_base
       - ./skills:/app/skills
