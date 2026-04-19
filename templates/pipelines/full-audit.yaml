@@ -4,7 +4,7 @@ label_de: Komplett-Audit
 description: "Competitive snapshot → Market analysis → Executive brief: strategic business audit."
 description_de: "Wettbewerbssnapshot → Marktanalyse → Executive-Brief: strategisches Business-Audit."
 variable_descriptions:
-  business: "Unternehmen, Produkt oder Marktsegment, z.B. 'vimind GmbH, B2B-Wireless-Lösungen'"
+  business: "Unternehmen, Produkt oder Marktsegment, z.B. 'Acme GmbH, B2B-SaaS-Plattform'"
 required_departments:
   - competitive-intel
   - market-research

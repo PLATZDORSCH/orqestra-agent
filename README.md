@@ -20,7 +20,7 @@ docker compose up -d
 
 Open **http://localhost:4200** — the setup wizard collects your project context, the built-in department templates (Market Research, Content Creation, Competitive Intelligence) auto-install on first start.
 
-> Need more detail? Jump to [Installation](#installation), [Configuration](#configuration), or the [docs site](https://platzdorsch.github.io/orqestra-agent/docs/).
+> Need more detail? Jump to [Installation](#installation), [Configuration](#configuration), or the [docs site](https://orqestra.platzdorsch.io/docs/).
 
 ## What is this?
 
