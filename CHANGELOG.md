@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] — Env-var resolution for newly created departments
+
+### Fixed
+- `create_department_from_builder` (`core/department_builder.py`) and the
+  registry reload path used by the departments API
+  (`api/departments.py::_registry_reload_params`) now pass `llm.model`
+  through `resolve_env()`, just like `llm.base_url` and `llm.api_key`.
+  Previously, the raw placeholder string from `config.yaml`
+  (e.g. `${OPENAI_MODEL:-gpt-4o-mini}`) was forwarded verbatim to the
+  OpenAI client for departments created or reloaded at runtime, causing
+  `BadRequestError: Invalid model name passed in model=${OPENAI_MODEL:-gpt-4o-mini}`
+  on the first request. Departments built during full engine bootstrap
+  were unaffected.
+- Default model fallback aligned to `gpt-4o-mini` across all three call
+  sites (`bootstrap.py`, `department_builder.py`, `api/departments.py`)
+  to match the value documented in `config.yaml` and `.env.example`.
+
 ## [0.1.1] — Web UI polish & docs
 
 ### Added
@@ -101,6 +118,7 @@ First public version of Orqestra:
   `analyze_page_seo`, `axe_wcag_scan`, `run_script`, `read_data`,
   `generate_chart`, KB CRUD and cross-department search.
 
-[Unreleased]: https://github.com/PLATZDORSCH/orqestra-agent/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/PLATZDORSCH/orqestra-agent/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/PLATZDORSCH/orqestra-agent/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/PLATZDORSCH/orqestra-agent/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/PLATZDORSCH/orqestra-agent/releases/tag/v0.1.0

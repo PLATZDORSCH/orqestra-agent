@@ -55,7 +55,7 @@ def _registry_reload_params() -> dict:
         "root": ROOT,
         "llm_base_url": resolve_env(llm.get("base_url", "https://api.openai.com/v1")),
         "llm_api_key": resolve_env(llm.get("api_key", "${OPENAI_API_KEY}")),
-        "llm_model": llm.get("model", "gpt-4o"),
+        "llm_model": resolve_env(llm.get("model", "gpt-4o-mini")),
         "language": engine_cfg.get("language"),
         "context_window": int(engine_cfg.get("context_window", 0)),
         "summarize_at": float(engine_cfg.get("summarize_at", 0.7)),

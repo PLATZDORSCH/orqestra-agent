@@ -679,7 +679,7 @@ def create_department_from_builder(
     llm_cfg = cfg.get("llm") or {}
     base_url = resolve_env(llm_cfg.get("base_url", "https://api.openai.com/v1"))
     api_key = resolve_env(llm_cfg.get("api_key", "${OPENAI_API_KEY}"))
-    model = llm_cfg.get("model", "gpt-4o")
+    model = resolve_env(llm_cfg.get("model", "gpt-4o-mini"))
 
     registry.add_department(
         dept_cfg,
